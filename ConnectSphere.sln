@@ -11,6 +11,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectSphere.API.Domain", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectSphere.API.Common", "ConnectSphere.API.Common\ConnectSphere.API.Common.csproj", "{35FBA1B6-C0EE-45CC-BB2C-FB9BBA451528}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectSphere.API.Application", "ConnectSphere.API.Application\ConnectSphere.API.Application.csproj", "{281D872D-5310-4E72-803C-21FFFC069B2D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConnectSphere.API.RUSTApi", "ConnectSphere.API.RUSTApi\ConnectSphere.API.RUSTApi.csproj", "{A35EEF70-8F96-4547-B885-447F3BB1CB8A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +29,14 @@ Global
 		{35FBA1B6-C0EE-45CC-BB2C-FB9BBA451528}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{35FBA1B6-C0EE-45CC-BB2C-FB9BBA451528}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{35FBA1B6-C0EE-45CC-BB2C-FB9BBA451528}.Release|Any CPU.Build.0 = Release|Any CPU
+		{281D872D-5310-4E72-803C-21FFFC069B2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{281D872D-5310-4E72-803C-21FFFC069B2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{281D872D-5310-4E72-803C-21FFFC069B2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{281D872D-5310-4E72-803C-21FFFC069B2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A35EEF70-8F96-4547-B885-447F3BB1CB8A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A35EEF70-8F96-4547-B885-447F3BB1CB8A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A35EEF70-8F96-4547-B885-447F3BB1CB8A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A35EEF70-8F96-4547-B885-447F3BB1CB8A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -32,6 +44,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{E48E91FD-0401-4EAB-BC94-4A0FE1EB377E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{35FBA1B6-C0EE-45CC-BB2C-FB9BBA451528} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{281D872D-5310-4E72-803C-21FFFC069B2D} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{A35EEF70-8F96-4547-B885-447F3BB1CB8A} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7504AC13-19E0-4381-861A-91FD09E70FCF}

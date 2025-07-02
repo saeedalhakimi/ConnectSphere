@@ -1,0 +1,6 @@
+@ConnectSphere.API.RUSTApi_HostAddress = http://localhost:5028
+
+GET {{ConnectSphere.API.RUSTApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
