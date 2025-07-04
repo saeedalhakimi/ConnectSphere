@@ -23,6 +23,8 @@ namespace ConnectSphere.API.Domain.Common.Enums
         InvalidOperation = 1011,
         Database = 1012,
         AuthorizationError = 1013,
+        ResourceCreationFailed = 1014,
+        RESOURCECREATIONFAILED = 1015,
     }
 }
 

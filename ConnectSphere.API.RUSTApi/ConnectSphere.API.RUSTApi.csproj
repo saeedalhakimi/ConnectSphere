@@ -7,7 +7,19 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" Version="8.1.0" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" Version="8.1.0" />
+    <PackageReference Include="MediatR" Version="12.5.0" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.6" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ConnectSphere.API.Application\ConnectSphere.API.Application.csproj" />
+    <ProjectReference Include="..\ConnectSphere.API.Common\ConnectSphere.API.Common.csproj" />
+    <ProjectReference Include="..\ConnectSphere.API.Infrastructure\ConnectSphere.API.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

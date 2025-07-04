@@ -15,7 +15,6 @@ namespace ConnectSphere.API.Domain.Aggregate
     {
         public Guid PersonId { get; private set; }
         public PersonName Name { get; private set; }
-        public Guid PersonTypeId { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
         public bool IsDeleted { get; private set; }
@@ -33,27 +32,24 @@ namespace ConnectSphere.API.Domain.Aggregate
         public PersonBirthDetails? BirthDetails => _birthDetails;
         public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
-        private Person(Guid personId, PersonName name, Guid personTypeId, DateTime createdAt, DateTime? updatedAt, bool isDeleted)
+        private Person(Guid personId, PersonName name, DateTime createdAt, DateTime? updatedAt, bool isDeleted)
         {
             PersonId = personId;
             Name = name;
-            PersonTypeId = personTypeId;
             CreatedAt = createdAt;
             UpdatedAt = updatedAt;
             IsDeleted = isDeleted;
         }
 
-        public static OperationResult<Person> Create(Guid personId, PersonName name, Guid personTypeId)
+        public static OperationResult<Person> Create(Guid personId, PersonName name, string? correlationId = null)
         {
             if (personId == Guid.Empty)
                 return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "PersonId cannot be empty.");
             if (name == null)
                 return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Name cannot be null.");
-            if (personTypeId == Guid.Empty)
-                return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "PersonTypeId cannot be empty.");
-
-            var person = new Person(personId, name, personTypeId, DateTime.UtcNow, null, false);
-            person._domainEvents.Add(new Events.PersonCreatedEvent(personId, name, personTypeId));
+           
+            var person = new Person(personId, name, DateTime.UtcNow, null, false);
+            person._domainEvents.Add(new Events.PersonCreatedEvent(personId, name, correlationId));
             return OperationResult<Person>.Success(person);
         }
 

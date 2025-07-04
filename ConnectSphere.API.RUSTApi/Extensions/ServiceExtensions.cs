@@ -1,0 +1,16 @@
+﻿using ConnectSphere.API.Application.Services;
+using ConnectSphere.API.Domain.IRepositories;
+using ConnectSphere.API.Infrastructure.Repositories;
+
+namespace ConnectSphere.API.RUSTApi.Extensions
+{
+    public static class ServiceExtensions
+    {
+        public static IServiceCollection AddRegistrationServices(this IServiceCollection services)
+        {
+            services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
+            services.AddScoped<IPersonRepository, PersonRepository>();
+            return services;
+        }
+    }
+}

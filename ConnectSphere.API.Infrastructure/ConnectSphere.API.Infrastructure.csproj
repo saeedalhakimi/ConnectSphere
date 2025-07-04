@@ -1,0 +1,20 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.6" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ConnectSphere.API.Application\ConnectSphere.API.Application.csproj" />
+    <ProjectReference Include="..\ConnectSphere.API.Common\ConnectSphere.API.Common.csproj" />
+    <ProjectReference Include="..\ConnectSphere.API.Domain\ConnectSphere.API.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

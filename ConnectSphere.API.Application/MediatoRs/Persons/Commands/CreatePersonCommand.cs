@@ -16,17 +16,15 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.Commands
         public string? MiddleName { get; set; } 
         public string LastName { get; set; }
         public string? Suffix { get; set; }
-        public Guid PersonTypeID { get; set; }
         public string CorrelationId { get; set; }
 
-        public CreatePersonCommand(string? title, string firstName, string? middleName, string lastName, string? suffix, Guid personTypeID, string correlationId)
+        public CreatePersonCommand(string? title, string firstName, string? middleName, string lastName, string? suffix, string correlationId)
         {
             Title = title;
             FirstName = firstName;
             MiddleName = middleName;
             LastName = lastName;
             Suffix = suffix;
-            PersonTypeID = personTypeID;
             CorrelationId = correlationId;
         }
     }

@@ -28,16 +28,14 @@ CREATE TABLE Person (
     LastName NVARCHAR(50) NOT NULL,
     Title NVARCHAR(10) NULL, -- e.g., Mr., Ms., Dr.
     Suffix NVARCHAR(10) NULL, -- e.g., Jr., Sr.
-    PersonTypeId UNIQUEIDENTIFIER NULL,
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     UpdatedAt DATETIME NULL,
     IsDeleted BIT NOT NULL DEFAULT 0,
     CONSTRAINT CHK_Person_FirstName CHECK (FirstName <> ''),
     CONSTRAINT CHK_Person_LastName CHECK (LastName <> ''),
     CONSTRAINT CHK_Person_Title CHECK (Title IS NULL OR Title <> ''),
-    CONSTRAINT CHK_Person_Suffix CHECK (Suffix IS NULL OR Suffix <> ''),
-    FOREIGN KEY (PersonTypeId) REFERENCES PersonType(PersonTypeId)
+    CONSTRAINT CHK_Person_Suffix CHECK (Suffix IS NULL OR Suffix <> '')
 );
 
-CREATE NONCLUSTERED INDEX IX_Person_PersonTypeId ON Person(PersonTypeId);
+
 CREATE NONCLUSTERED INDEX IX_Person_LastName_FirstName ON Person(LastName, FirstName);

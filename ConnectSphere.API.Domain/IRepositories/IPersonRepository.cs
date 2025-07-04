@@ -63,14 +63,7 @@ namespace ConnectSphere.API.Domain.IRepositories
         /// <returns>An OperationResult containing the person or errors.</returns>
         Task<OperationResult<Person>> GetByEmailAsync(Email email, CancellationToken cancellationToken);
 
-        /// <summary>
-        /// Retrieves a person type by ID.
-        /// </summary>
-        /// <param name="personTypeId">The ID of the person type.</param>
-        /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
-        /// <returns>An OperationResult containing the person type or errors.</returns>
-        Task<OperationResult<PersonType>> GetPersonTypeByIdAsync(Guid personTypeId, CancellationToken cancellationToken);
-
+        
         /// <summary>
         /// Retrieves a country by ID.
         /// </summary>

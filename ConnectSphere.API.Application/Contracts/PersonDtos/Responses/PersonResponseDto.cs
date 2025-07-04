@@ -10,9 +10,9 @@ namespace ConnectSphere.API.Application.Contracts.PersonDtos.Responses
         Guid PersonId,
         string? Title,
         string FirstName,
+        string? MiddleName,
         string LastName,
         string? Suffix,
-        Guid PersonTypeId, //turn this type name
         DateTime CreatedAt,
         DateTime? UpdatedAt,
         bool IsDeleted);

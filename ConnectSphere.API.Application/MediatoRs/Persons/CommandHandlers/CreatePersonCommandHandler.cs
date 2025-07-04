@@ -1,7 +1,9 @@
 ﻿using ConnectSphere.API.Application.Contracts.PersonDtos.Responses;
 using ConnectSphere.API.Application.MediatoRs.Persons.Commands;
+using ConnectSphere.API.Application.Services;
+using ConnectSphere.API.Common.IClocking;
+using ConnectSphere.API.Common.ILogging;
 using ConnectSphere.API.Domain.Aggregate;
-using ConnectSphere.API.Domain.Common.Enums;
 using ConnectSphere.API.Domain.Common.Models;
 using ConnectSphere.API.Domain.IRepositories;
 using ConnectSphere.API.Domain.ValueObjects;
@@ -16,87 +18,112 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers
 {
     public class CreatePersonCommandHandler : IRequestHandler<CreatePersonCommand, OperationResult<PersonResponseDto>>
     {
+        private readonly IErrorHandlingService _errorHandlingService;
+        private readonly IDomainEventDispatcher _eventDispatcher;
+        private readonly IAppLogger<CreatePersonCommandHandler> _logger;
+        private readonly ISystemClocking _systemClocking;
         private readonly IPersonRepository _personRepository;
-        private readonly IMediator _mediator;
-        public CreatePersonCommandHandler(IPersonRepository personRepository, IMediator mediator)
-        {
-            _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
-            _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
-        }
 
+        public CreatePersonCommandHandler(
+            IErrorHandlingService errorHandlingService,
+            IDomainEventDispatcher eventDispatcher,
+            IAppLogger<CreatePersonCommandHandler> logger,
+            ISystemClocking systemClocking,
+            IPersonRepository personRepository)
+        {
+            _errorHandlingService = errorHandlingService ?? throw new ArgumentNullException(nameof(errorHandlingService));
+            _eventDispatcher = eventDispatcher ?? throw new ArgumentNullException(nameof(eventDispatcher));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _systemClocking = systemClocking ?? throw new ArgumentNullException(nameof(systemClocking));
+            _personRepository = personRepository ?? throw new ArgumentNullException(nameof(personRepository));
+        }
         public async Task<OperationResult<PersonResponseDto>> Handle(CreatePersonCommand request, CancellationToken cancellationToken)
         {
+            using var scope = _logger.BeginScope(new System.Collections.Generic.Dictionary<string, object> { { "CorrelationId", request.CorrelationId } });
+            _logger.LogInformation("Handling CreatePersonCommand for {FirstName} {LastName}. CorrelationId: {CorrelationId}",
+                request.FirstName, request.LastName, request.CorrelationId);
             try
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // Validate person type exists
-                var personTypeResult = await _personRepository.GetPersonTypeByIdAsync(request.PersonTypeID, cancellationToken);
-                if (!personTypeResult.IsSuccess)
-                {
-                    var errors = string.Join("; ", personTypeResult.Errors.Select(e => e.Message));// to use it for loggs later when impelemnted
-                    return OperationResult<PersonResponseDto>.Failure(personTypeResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
-                }
-
                 // Create person name
+                _logger.LogInformation("Creating PersonName. CorrelationId: {CorrelationId}", request.CorrelationId);
                 var nameResult = PersonName.Create(request.FirstName, request.MiddleName, request.LastName, request.Title, request.Suffix);
                 if (!nameResult.IsSuccess)
                 {
+                    _logger.LogWarning("PersonName creation failed: {Errors}. CorrelationId: {CorrelationId}",
+                        string.Join("; ", nameResult.Errors.Select(e => e.Message)), request.CorrelationId);
                     return OperationResult<PersonResponseDto>.Failure(
                         nameResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
                 }
 
                 // Create person
-                var personResult = Person.Create(Guid.NewGuid(), nameResult.Data!, request.PersonTypeID);
+                _logger.LogInformation("Creating Person entity. CorrelationId: {CorrelationId}", request.CorrelationId);
+                var personResult = Person.Create(Guid.NewGuid(), nameResult.Data!);
                 if (!personResult.IsSuccess)
                 {
+                    _logger.LogWarning("Person creation failed: {Errors}. CorrelationId: {CorrelationId}",
+                        string.Join("; ", personResult.Errors.Select(e => e.Message)), request.CorrelationId);
                     return OperationResult<PersonResponseDto>.Failure(
                         personResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
                 }
 
                 // Persist person
+                _logger.LogInformation("Persisting Person to repository. CorrelationId: {CorrelationId}", request.CorrelationId);
                 var persistResult = await _personRepository.CreateAsync(personResult.Data!, request.CorrelationId, cancellationToken);
                 if (!persistResult.IsSuccess)
                 {
+                    _logger.LogWarning("Person persistence failed: {Errors}. CorrelationId: {CorrelationId}",
+                        string.Join("; ", persistResult.Errors.Select(e => e.Message)), request.CorrelationId);
                     return OperationResult<PersonResponseDto>.Failure(
                         persistResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
                 }
 
-                // Publish domain events (e.g., PersonCreatedEvent) to notify other parts of the system
-                // IMediator is used here to dispatch events to their handlers, decoupling the command handler
-                foreach (var domainEvent in personResult.Data!.DomainEvents)
+                // Dispatch domain events
+                var person = persistResult.Data!;
+                if (person.DomainEvents.Any())
                 {
-                    await _mediator.Publish(domainEvent, cancellationToken);
+                    _logger.LogInformation("Dispatching domain events for Person {PersonId}. CorrelationId: {CorrelationId}",
+                        person.PersonId, request.CorrelationId);
+                    foreach (var domainEvent in person.DomainEvents)
+                    {
+                        await _eventDispatcher.DispatchAsync(domainEvent, cancellationToken);
+                    }
+                }
+                else
+                {
+                    _logger.LogDebug("No domain events to dispatch for Person {PersonId}. CorrelationId: {CorrelationId}",
+                        person.PersonId, request.CorrelationId);
                 }
 
-                // Clear domain events after publishing to prevent re-publishing
+                // Clear domain events
                 personResult.Data.ClearDomainEvents();
+                _logger.LogInformation("Cleared domain events for Person {PersonId}. CorrelationId: {CorrelationId}",
+                    personResult.Data!.PersonId, request.CorrelationId);
 
                 // Map to response DTO
-                // Map to DTO
-                var person = persistResult.Data;
                 var responseDto = new PersonResponseDto(
                     person.PersonId,
                     person.Name.Title,
                     person.Name.FirstName,
+                    person.Name.MiddleName,
                     person.Name.LastName,
                     person.Name.Suffix,
-                    person.PersonTypeId,
                     person.CreatedAt,
                     person.UpdatedAt,
                     person.IsDeleted);
 
+                _logger.LogInformation("Person created successfully with ID {PersonId}. CorrelationId: {CorrelationId}",
+                    person.PersonId, request.CorrelationId);
                 return OperationResult<PersonResponseDto>.Success(responseDto);
-
             }
             catch (OperationCanceledException ex)
             {
-                // Handle cancellation gracefully
-                return OperationResult<PersonResponseDto>.Failure(new Error(ErrorCode.OperationCancelled, "Operation was cancelled.{ex.Message}", $"{ex.Source} - {ex.ToString()}.", request.CorrelationId));
+                return _errorHandlingService.HandleCancelationToken<PersonResponseDto>(ex, request.CorrelationId);
             }
             catch (Exception ex)
             {
-                return OperationResult<PersonResponseDto>.Failure(new Error(ErrorCode.InternalServerError, "An unexpected error occurred while creating the person.", $"{ex.Source} - {ex.ToString()}.", request.CorrelationId));
+                return _errorHandlingService.HandleException<PersonResponseDto>(ex, request.CorrelationId);
             }
         }
     }
