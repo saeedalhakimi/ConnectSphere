@@ -45,7 +45,7 @@ namespace ConnectSphere.API.Domain.IRepositories
         /// <param name="personId">The ID of the person to retrieve.</param>
         /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
         /// <returns>An OperationResult containing the person or errors.</returns>
-        Task<OperationResult<Person>> GetByIdAsync(Guid personId, CancellationToken cancellationToken);
+        Task<OperationResult<Person>> GetByIdAsync(Guid personId, string? correlationId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Retrieves all non-deleted persons, optionally including related entities.

@@ -10,7 +10,7 @@
         public static class PersonRoutes
         {
             public const string CreatePerson = "create";
-            public const string PersonById = "{personId:guid}";
+            public const string PersonById = "get-by-id/{personId}";
         }
 
 

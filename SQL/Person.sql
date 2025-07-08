@@ -39,3 +39,84 @@ CREATE TABLE Person (
 
 
 CREATE NONCLUSTERED INDEX IX_Person_LastName_FirstName ON Person(LastName, FirstName);
+
+
+CREATE PROCEDURE SP_CreatePerson
+	@PersonId UNIQUEIDENTIFIER,
+    @FirstName NVARCHAR(50),
+    @MiddleName NVARCHAR(50) = NULL,
+    @LastName NVARCHAR(50),
+    @Title NVARCHAR(10) = NULL,
+    @Suffix NVARCHAR(10) = NULL,
+    @CreatedAt DATETIME,
+    @UpdatedAt DATETIME = NULL,
+    @IsDeleted BIT,
+    @CorrelationId NVARCHAR(36) = NULL
+AS
+BEGIN
+    BEGIN TRY
+        -- Insert into Person table
+        INSERT INTO dbo.Person (
+            PersonId,
+            FirstName,
+            MiddleName,
+            LastName,
+            Title,
+            Suffix,
+            CreatedAt,
+            UpdatedAt,
+            IsDeleted
+        )
+        VALUES (
+            @PersonId,
+            @FirstName,
+            @MiddleName,
+            @LastName,
+            @Title,
+            @Suffix,
+            @CreatedAt,
+            @UpdatedAt,
+            @IsDeleted
+        );
+    END TRY
+    BEGIN CATCH
+        -- Capture error details
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: PersonId=' + CAST(@PersonId AS NVARCHAR(36)) + 
+            ', FirstName=' + ISNULL(@FirstName, 'NULL') + 
+            ', LastName=' + ISNULL(@LastName, 'NULL') + 
+            ', CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        -- Log error to ErrorLog table
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        -- Re-throw the error to the caller
+        THROW;
+    END CATCH
+END;
+GO

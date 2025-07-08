@@ -25,6 +25,7 @@ namespace ConnectSphere.API.Domain.Common.Enums
         AuthorizationError = 1013,
         ResourceCreationFailed = 1014,
         RESOURCECREATIONFAILED = 1015,
+        NOTFOUND = 1016,
     }
 }
 

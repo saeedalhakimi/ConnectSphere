@@ -53,6 +53,17 @@ namespace ConnectSphere.API.Domain.Aggregate
             return OperationResult<Person>.Success(person);
         }
 
+        public static OperationResult<Person> Create(Guid personId, PersonName name, DateTime createdAt, DateTime? updatedAt, bool isDeleted)
+        {
+            if (personId == Guid.Empty)
+                return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "PersonId cannot be empty.");
+            if (name == null)
+                return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Name cannot be null.");
+
+            var person = new Person(personId, name, createdAt, updatedAt, isDeleted);
+            return OperationResult<Person>.Success(person);
+        }
+
         public OperationResult<Address> AddAddress(Address address)
         {
             if (address == null || address.PersonId != PersonId)

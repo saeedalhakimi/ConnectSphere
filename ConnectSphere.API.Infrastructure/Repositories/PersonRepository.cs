@@ -41,6 +41,7 @@ namespace ConnectSphere.API.Infrastructure.Repositories
             _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
             _systemClocking = systemClocking ?? throw new ArgumentNullException(nameof(systemClocking));
         }
+
         public async Task<OperationResult<Person>> CreateAsync(Person person, string? correlationId, CancellationToken cancellationToken)
         {
             using var scope = _logger.BeginScope(new System.Collections.Generic.Dictionary<string, object> { { "CorrelationId", correlationId ?? "N/A" } });
@@ -104,6 +105,86 @@ namespace ConnectSphere.API.Infrastructure.Repositories
 
         }
 
+        public async Task<OperationResult<Person>> GetByIdAsync(Guid personId, string? correlationId, CancellationToken cancellationToken)
+        {
+            using var scope = _logger.BeginScope(new Dictionary<string, object> { { "CorrelationId", correlationId ?? "N/A" } });
+            _logger.LogInformation("Starting person fetch process for PersonId: {PersonId}", personId);
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                _logger.LogDebug("Cancellation token checked. Proceeding with database connection.");
+
+                await using var connection = await _connectionFactory.CreateConnectionAsync(_connectionString, cancellationToken);
+
+                using var command = connection.CreateCommand();
+                command.CommandText = "SP_GetPersonById";
+                command.CommandType = System.Data.CommandType.StoredProcedure;
+
+                command.AddParameter("@PersonId", personId);
+                command.AddParameter("@CorrelationId", correlationId ?? (object)DBNull.Value);
+
+                _logger.LogDebug("Parameters added to stored procedure: PersonId={PersonId}, CorrelationId={CorrelationId}",
+                    personId, correlationId);
+
+                await connection.OpenAsync(cancellationToken);
+                _logger.LogInformation("Database connection opened successfully.");
+
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                if (await reader.ReadAsync(cancellationToken))
+                {
+                    var nameResult = PersonName.Create(
+                        reader.GetString(reader.GetOrdinal("FirstName")),
+                        reader.IsDBNull(reader.GetOrdinal("MiddleName")) ? null : reader.GetString(reader.GetOrdinal("MiddleName")),
+                        reader.GetString(reader.GetOrdinal("LastName")),
+                        reader.IsDBNull(reader.GetOrdinal("Title")) ? null : reader.GetString(reader.GetOrdinal("Title")),
+                        reader.IsDBNull(reader.GetOrdinal("Suffix")) ? null : reader.GetString(reader.GetOrdinal("Suffix")));
+                    if (!nameResult.IsSuccess) 
+                    {
+                        _logger.LogWarning("Failed to create PersonName for PersonId: {PersonId}. Errors: {Errors}",
+                            personId, string.Join("; ", nameResult.Errors.Select(e => e.Message)));
+                        return OperationResult<Person>.Failure(nameResult.Errors);
+                    }
+
+                    var person = Person.Create(
+                        reader.GetGuid(reader.GetOrdinal("PersonId")),
+                        nameResult.Data!,
+                        reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+                        reader.IsDBNull(reader.GetOrdinal("UpdatedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
+                        reader.GetBoolean(reader.GetOrdinal("IsDeleted")));
+                    if (!person.IsSuccess)
+                    {
+                        _logger.LogWarning("Failed to create Person for PersonId: {PersonId}. Errors: {Errors}",
+                            personId, string.Join("; ", person.Errors.Select(e => e.Message)));
+                        return OperationResult<Person>.Failure(person.Errors);
+                    }
+
+                    _logger.LogInformation("Person fetched successfully for PersonId: {PersonId}", personId);
+                    return OperationResult<Person>.Success(person.Data!);
+                }
+
+                _logger.LogWarning("Person not found for PersonId: {PersonId}", personId);
+                return OperationResult<Person>.Failure(new Error(
+                    ErrorCode.NOTFOUND,
+                    "NOT_FOUND",
+                    $"Person with ID {personId} not found.",
+                    correlationId));
+            }
+            catch (OperationCanceledException ex)
+            {
+                _logger.LogWarning("Person fetch operation was canceled for PersonId: {PersonId}. Exception: {Exception}", personId, ex.Message);
+                return _errorHandlingService.HandleCancelationToken<Person>(ex, correlationId);
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "Database error occurred while fetching person for PersonId: {PersonId}", personId);
+                return _errorHandlingService.HandleException<Person>(ex, correlationId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An unexpected error occurred while fetching person for PersonId: {PersonId}", personId);
+                return _errorHandlingService.HandleException<Person>(ex, correlationId);
+            }
+        }
 
 
 
@@ -131,10 +212,6 @@ namespace ConnectSphere.API.Infrastructure.Repositories
             throw new NotImplementedException();
         }
 
-        public Task<OperationResult<Person>> GetByIdAsync(Guid personId, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
 
         public Task<OperationResult<Country>> GetCountryByIdAsync(Guid countryId, CancellationToken cancellationToken)
         {

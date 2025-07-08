@@ -1,6 +1,7 @@
 ﻿using Asp.Versioning;
 using ConnectSphere.API.Application.Contracts.PersonDtos.Requests;
 using ConnectSphere.API.Application.MediatoRs.Persons.Commands;
+using ConnectSphere.API.Application.MediatoRs.Persons.Queries;
 using ConnectSphere.API.Common.IClocking;
 using ConnectSphere.API.Common.ILogging;
 using ConnectSphere.API.RUSTApi.Filters;
@@ -50,14 +51,28 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Person
             return CreatedAtRoute("GetPersonById", new { personId = result.Data.PersonId }, result);
         }
 
-        [HttpGet("{personId}", Name = "GetPersonById")]
+        [HttpGet(ApiRoutes.PersonRoutes.PersonById, Name = "GetPersonById")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetPersonById(Guid personId)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ValidateGuid("personId")]
+        public async Task<IActionResult> GetPersonById([FromRoute] string personId, CancellationToken cancellationToken)
         {
-            // Placeholder: To be implemented later
-            _logger.LogInformation("GetPersonById called for PersonId: {PersonId}", personId);
-            return NotFound();
+            var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
+            using var scope = _logger.BeginScope(new Dictionary<string, object> { { "CorrelationId", correlationId } });
+            _logger.LogRequest(HttpContext.Request.Method, HttpContext.Request.Path, correlationId);
+            _logger.LogInformation("Getting person with ID: {personId} and CorrelationId: {CorrelationId}", personId, correlationId);
+
+            var query = new GetPersonByIDQuery(Guid.Parse(personId), correlationId);
+            var result = await _mediator.Send(query, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                _logger.LogError(null, "Failed to get person by ID: {PersonId}. Errors: {Errors}. CorrelationId: {CorrelationId}",
+                    personId, string.Join(", ", result.Errors.Select(e => e.Message)), correlationId);
+                return HandleResult(result, correlationId);
+            }
+            _logger.LogInformation("Person retrieved successfully for ID: {PersonId}. CorrelationId: {CorrelationId}", personId, correlationId);
+            return Ok(result);
         }
 
     }
