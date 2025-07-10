@@ -64,6 +64,18 @@ namespace ConnectSphere.API.Domain.Aggregate
             return OperationResult<Person>.Success(person);
         }
 
+        public OperationResult<Person> UpdateName(PersonName newName, string? correlationId = null)
+        {
+            if (newName == null)
+                return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "New name cannot be null.", correlationId);
+            if (IsDeleted)
+                return OperationResult<Person>.Failure(ErrorCode.InvalidOperation, "INVALID_OPERATION", "Cannot update a deleted person.", correlationId);
+
+            Name = newName;
+            UpdatedAt = DateTime.UtcNow;
+            _domainEvents.Add(new Events.PersonNameUpdatedEvent(PersonId, newName, correlationId));
+            return OperationResult<Person>.Success(this);
+        }
         public OperationResult<Address> AddAddress(Address address)
         {
             if (address == null || address.PersonId != PersonId)

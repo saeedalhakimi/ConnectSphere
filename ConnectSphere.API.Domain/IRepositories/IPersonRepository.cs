@@ -28,7 +28,7 @@ namespace ConnectSphere.API.Domain.IRepositories
         /// <param name="correlationId">The correlation ID for tracing the operation.</param>
         /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
         /// <returns>An OperationResult indicating success or errors.</returns>
-        Task<OperationResult<Person>> UpdateAsync(Person person, string? correlationId, CancellationToken cancellationToken);
+        Task<OperationResult<bool>> UpdateAsync(Person person, string? correlationId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Soft-deletes a person by setting IsDeleted to true.
@@ -50,10 +50,30 @@ namespace ConnectSphere.API.Domain.IRepositories
         /// <summary>
         /// Retrieves all non-deleted persons, optionally including related entities.
         /// </summary>
-        /// <param name="includeRelated">Whether to include related entities (Addresses, PhoneNumbers, etc.).</param>
+        /// <param name="pageNumber"> The page number for pagination.</param>
+        /// <param name="pageSize"> The number of persons per page.</param>
+        /// <param name="correlationId"> The correlation ID for tracing the operation.</param>
         /// <param name="cancellationToken">The cancellation token to cancel the operation.</param>
         /// <returns>An OperationResult containing a list of persons or errors.</returns>
-        Task<OperationResult<IEnumerable<Person>>> GetAllAsync(bool includeRelated, CancellationToken cancellationToken);
+        Task<OperationResult<IReadOnlyList<Person>>> GetAllAsync(int pageNumber, int pageSize, string? correlationId, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Retrieves the count of non-deleted persons.
+        /// </summary>
+        /// <param name="cancellationToken"> The cancellation token to cancel the operation.</param>
+        /// <param name="correlationId"> The correlation ID for tracing the operation.</param>
+        /// <returns>An OperationResult containing the count of persons or errors.</returns>
+        Task<OperationResult<int>> GetCountAsync(string? correlationId, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Updates the name of a person.
+        /// </summary>
+        /// <param name="personId"> The ID of the person whose name is to be updated.</param>
+        /// <param name="newName"> The new name to set for the person.</param>
+        /// <param name="correlationId"> The correlation ID for tracing the operation.</param>
+        /// <param name="cancellationToken"> The cancellation token to cancel the operation.</param>
+        /// <returns>An OperationResult bool indicating success or errors.</returns>
+        Task<OperationResult<bool>> UpdateNameAsync(Guid personId, PersonName newName, string? correlationId, CancellationToken cancellationToken);
 
         /// <summary>
         /// Retrieves a person by email address.

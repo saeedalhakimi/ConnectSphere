@@ -11,6 +11,9 @@
         {
             public const string CreatePerson = "create";
             public const string PersonById = "get-by-id/{personId}";
+            public const string GetPersons = "get-all-persons";
+            public const string UpdatePerson = "update/{personId}";
+            public const string DeletePerson = "delete/{personId}";
         }
 
 

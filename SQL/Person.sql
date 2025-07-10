@@ -120,3 +120,280 @@ BEGIN
     END CATCH
 END;
 GO
+
+CREATE OR ALTER PROCEDURE SP_GetPersonById
+    @PersonId UNIQUEIDENTIFIER,
+    @CorrelationId NVARCHAR(36) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        -- Validate PersonId
+        IF @PersonId IS NULL OR @PersonId = '00000000-0000-0000-0000-000000000000'
+        BEGIN
+            THROW 50001, 'PersonId cannot be null or empty.', 1;
+        END
+
+        -- Fetch person
+        SELECT 
+            PersonId,
+            Title,
+            FirstName,
+            MiddleName,
+            LastName,
+            Suffix,
+            CreatedAt,
+            UpdatedAt,
+            IsDeleted
+        FROM [dbo].[Person]
+        WHERE PersonId = @PersonId AND IsDeleted = 0;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50002, 'Person not found.', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        -- Capture error details
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: PersonId=' + ISNULL(CAST(@PersonId AS NVARCHAR(36)), 'NULL') + 
+            ', CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        -- Log error to ErrorLog table
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        -- Re-throw the error to the caller
+        THROW;
+    END CATCH
+END;
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[SP_GetAllPersons]
+    @PageNumber INT,
+    @PageSize INT,
+    @CorrelationId NVARCHAR(36) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF @PageNumber < 1 OR @PageSize < 1
+        BEGIN
+            THROW 50004, 'PageNumber and PageSize must be greater than 0.', 1;
+        END
+
+        DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+
+        SELECT 
+            PersonId,
+            Title,
+            FirstName,
+            MiddleName,
+            LastName,
+            Suffix,
+            CreatedAt,
+            UpdatedAt,
+            IsDeleted
+        FROM [dbo].[Person]
+        WHERE IsDeleted = 0
+        ORDER BY PersonId
+        OFFSET @Offset ROWS
+        FETCH NEXT @PageSize ROWS ONLY;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50003, 'No persons found for the specified page.', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: PageNumber=' + CAST(@PageNumber AS NVARCHAR(10)) + 
+            ', PageSize=' + CAST(@PageSize AS NVARCHAR(10)) + 
+            ', CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        THROW;
+    END CATCH
+END;
+GO
+
+
+CREATE OR ALTER PROCEDURE [dbo].[SP_DeletePerson]
+    @PersonId UNIQUEIDENTIFIER,
+    @CorrelationId NVARCHAR(36) = NULL,
+    @RowsAffected INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        UPDATE [dbo].[Person]
+        SET IsDeleted = 1,
+            UpdatedAt = GETUTCDATE()
+        WHERE PersonId = @PersonId AND IsDeleted = 0;
+
+        SET @RowsAffected = @@ROWCOUNT;
+
+        
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: PersonId=' + CAST(@PersonId AS NVARCHAR(36)) + 
+            ', CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        THROW;
+    END CATCH
+END;
+GO
+
+
+CREATE OR ALTER PROCEDURE [dbo].[SP_UpdatePersonName]
+    @PersonId UNIQUEIDENTIFIER,
+    @Title NVARCHAR(10) = NULL,
+    @FirstName NVARCHAR(50),
+    @MiddleName NVARCHAR(50) = NULL,
+    @LastName NVARCHAR(50),
+    @Suffix NVARCHAR(10) = NULL,
+    @CorrelationId NVARCHAR(36) = NULL,
+    @RowsAffected INT OUTPUT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF @FirstName IS NULL OR @LastName IS NULL
+        BEGIN
+            THROW 50006, 'FirstName and LastName cannot be null.', 1;
+        END
+
+        UPDATE [dbo].[Person]
+        SET Title = @Title,
+            FirstName = @FirstName,
+            MiddleName = @MiddleName,
+            LastName = @LastName,
+            Suffix = @Suffix,
+            UpdatedAt = GETUTCDATE()
+        WHERE PersonId = @PersonId AND IsDeleted = 0;
+
+        SET @RowsAffected = @@ROWCOUNT;
+
+        IF @RowsAffected = 0
+        BEGIN
+            THROW 50005, 'Person not found or already deleted.', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: PersonId=' + CAST(@PersonId AS NVARCHAR(36)) + 
+            ', Title=' + ISNULL(@Title, 'NULL') + 
+            ', FirstName=' + ISNULL(@FirstName, 'NULL') + 
+            ', MiddleName=' + ISNULL(@MiddleName, 'NULL') + 
+            ', LastName=' + ISNULL(@LastName, 'NULL') + 
+            ', Suffix=' + ISNULL(@Suffix, 'NULL') + 
+            ', CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        THROW;
+    END CATCH
+END;

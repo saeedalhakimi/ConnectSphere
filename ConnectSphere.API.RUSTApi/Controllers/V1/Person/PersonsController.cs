@@ -43,7 +43,7 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Person
             var result = await _mediator.Send(command, cancellationToken);
             if (!result.IsSuccess)
             {
-                _logger.LogError(null,"Failed to create person. Errors: {Errors}. CorrelationId: {CorrelationId}", 
+                _logger.LogError(null, "Failed to create person. Errors: {Errors}. CorrelationId: {CorrelationId}",
                     string.Join(", ", result.Errors.Select(e => e.Message)), correlationId);
                 return HandleResult(result, correlationId);
             }
@@ -75,5 +75,74 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Person
             return Ok(result);
         }
 
+        [HttpGet(ApiRoutes.PersonRoutes.GetPersons,Name = "GetPersons")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetPersons([FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
+        {
+            var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
+            using var scope = _logger.BeginScope(new Dictionary<string, object> { { "CorrelationId", correlationId } });
+            _logger.LogRequest(HttpContext.Request.Method, HttpContext.Request.Path, correlationId);
+            _logger.LogInformation("Retrieving all persons with CorrelationId: {CorrelationId}", correlationId);
+            var query = new GetAllPersonsQuery(pageNumber, pageSize, correlationId);
+            var result = await _mediator.Send(query, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                _logger.LogError(null, "Failed to retrieve persons. Errors: {Errors}. CorrelationId: {CorrelationId}",
+                    string.Join(", ", result.Errors.Select(e => e.Message)), correlationId);
+                return HandleResult(result, correlationId);
+            }
+            _logger.LogInformation("Persons retrieved successfully. CorrelationId: {CorrelationId}", correlationId);
+            return Ok(result);
+        }
+
+        [HttpPut(ApiRoutes.PersonRoutes.UpdatePerson, Name = "UpdatePerson")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ValidateGuid("personId")]
+        [ValidateModel]
+        public async Task<IActionResult> UpdatePerson([FromRoute] string personId, [FromBody] UpdatePersonDto dto, CancellationToken cancellationToken)
+        {
+            var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
+            using var scope = _logger.BeginScope(new Dictionary<string, object> { { "CorrelationId", correlationId } });
+            _logger.LogRequest(HttpContext.Request.Method, HttpContext.Request.Path, correlationId);
+            _logger.LogInformation("Updating person with ID: {PersonId} and CorrelationId: {CorrelationId}", personId, correlationId);
+            var command = new UpdateCommand(Guid.Parse(personId), dto.Title, dto.FirstName, dto.MiddleName, dto.LastName, dto.Suffix, correlationId);
+            var result = await _mediator.Send(command, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                _logger.LogError(null, "Failed to update person with ID: {PersonId}. Errors: {Errors}. CorrelationId: {CorrelationId}",
+                    personId, string.Join(", ", result.Errors.Select(e => e.Message)), correlationId);
+                return HandleResult(result, correlationId);
+            }
+            _logger.LogInformation("Person with ID: {PersonId} updated successfully. CorrelationId: {CorrelationId}", personId, correlationId);
+            return Ok(result);
+        }
+
+        [HttpDelete(ApiRoutes.PersonRoutes.DeletePerson, Name = "DeletePerson")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ValidateGuid("personId")]
+        public async Task<IActionResult> DeletePerson([FromRoute] string personId, CancellationToken cancellationToken)
+        {
+            var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
+            using var scope = _logger.BeginScope(new Dictionary<string, object> { { "CorrelationId", correlationId } });
+            _logger.LogRequest(HttpContext.Request.Method, HttpContext.Request.Path, correlationId);
+            _logger.LogInformation("Deleting person with ID: {PersonId} and CorrelationId: {CorrelationId}", personId, correlationId);
+            var command = new DeletePersonCommand(Guid.Parse(personId), correlationId);
+            var result = await _mediator.Send(command, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                _logger.LogError(null, "Failed to delete person with ID: {PersonId}. Errors: {Errors}. CorrelationId: {CorrelationId}",
+                    personId, string.Join(", ", result.Errors.Select(e => e.Message)), correlationId);
+                return HandleResult(result, correlationId);
+            }
+            _logger.LogInformation("Person with ID: {PersonId} deleted successfully. CorrelationId: {CorrelationId}", personId, correlationId);
+            return NoContent();
+        }
     }
 }
