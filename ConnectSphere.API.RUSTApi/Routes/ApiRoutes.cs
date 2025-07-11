@@ -16,6 +16,13 @@
             public const string DeletePerson = "delete/{personId}";
         }
 
+        public static class  CountryRoutes
+        {
+            public const string GetByCountryID = "get-by-id/{countryId}";
+            public const string GetByCountryCode = "get-by-code/{countryCode}";
+            public const string GetByCountryName = "get-by-name/{name}";
+        }
+
 
     }
 }

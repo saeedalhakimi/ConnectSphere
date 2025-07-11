@@ -21,7 +21,6 @@ namespace ConnectSphere.API.Infrastructure.Repositories
 {
     public class PersonRepository : IPersonRepository
     {
-        private readonly IConfiguration _configuration;
         private readonly IAppLogger<PersonRepository> _logger;
         private readonly IErrorHandlingService _errorHandlingService;
         private readonly IDatabaseConnectionFactory _connectionFactory;
@@ -512,6 +511,8 @@ namespace ConnectSphere.API.Infrastructure.Repositories
         }
 
 
+
+
         public Task<OperationResult<AddressType>> GetAddressTypeByIdAsync(Guid addressTypeId, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
@@ -537,9 +538,6 @@ namespace ConnectSphere.API.Infrastructure.Repositories
         {
             throw new NotImplementedException();
         }
-
-        
-
-        
+ 
     }
 }

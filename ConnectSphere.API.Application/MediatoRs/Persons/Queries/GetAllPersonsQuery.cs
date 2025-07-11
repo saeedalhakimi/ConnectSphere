@@ -14,8 +14,8 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.Queries
     {
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
-        public string CorrelationId { get; set; }
-        public GetAllPersonsQuery(int pageNumber = 1, int pageSize = 10, string correlationId = "")
+        public string? CorrelationId { get; set; }
+        public GetAllPersonsQuery(int pageNumber = 1, int pageSize = 10, string? correlationId = "")
         {
             PageNumber = pageNumber;
             PageSize = pageSize;

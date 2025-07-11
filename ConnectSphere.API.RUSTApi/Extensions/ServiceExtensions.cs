@@ -10,6 +10,7 @@ namespace ConnectSphere.API.RUSTApi.Extensions
         {
             services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
             services.AddScoped<IPersonRepository, PersonRepository>();
+            services.AddScoped<ICountryRepository, CountryRepository>();
             return services;
         }
     }

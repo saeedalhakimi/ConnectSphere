@@ -16,9 +16,9 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.Commands
         public string? MiddleName { get; set; } 
         public string LastName { get; set; }
         public string? Suffix { get; set; }
-        public string CorrelationId { get; set; }
+        public string? CorrelationId { get; set; }
 
-        public CreatePersonCommand(string? title, string firstName, string? middleName, string lastName, string? suffix, string correlationId)
+        public CreatePersonCommand(string? title, string firstName, string? middleName, string lastName, string? suffix, string? correlationId)
         {
             Title = title;
             FirstName = firstName;

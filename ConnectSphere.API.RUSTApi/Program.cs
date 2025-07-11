@@ -28,13 +28,13 @@ builder.Services.AddSingleton(typeof(IAppLogger<>), typeof(AppLogger<>));
 builder.Services.AddSingleton<IDatabaseConnectionFactory, SqlDatabaseConnectionFactory>();
 // clocking service
 builder.Services.AddSingleton<ISystemClocking, SystemClocking>();
-builder.Services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
-builder.Services.AddScoped<IPersonRepository, PersonRepository>();
+//builder.Services.AddScoped<IErrorHandlingService, ErrorHandlingService>();
+//builder.Services.AddScoped<IPersonRepository, PersonRepository>();
 
 builder.Services.AddScoped<IDomainEventDispatcher, DomainEventDispatcher>();
 
 // Add Repositories and services 
-//builder.Services.AddRegistrationServices();
+builder.Services.AddRegistrationServices();
 
 // Versioning
 builder.Services.AddApiVersioning(options =>

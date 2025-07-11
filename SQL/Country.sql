@@ -11,6 +11,288 @@ CREATE TABLE Country (
     CONSTRAINT CHK_Country_Name CHECK (Name <> '')
 );
 
+USE [ConnectSphereDb]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[SP_GetAllCountries]
+    @PageNumber INT,
+    @PageSize INT,
+    @CorrelationId NVARCHAR(36) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF @PageNumber < 1 OR @PageSize < 1
+        BEGIN
+            THROW 50001, 'PageNumber and PageSize must be greater than 0.', 1;
+        END
+
+        DECLARE @Offset INT = (@PageNumber - 1) * @PageSize;
+
+        SELECT 
+            CountryId,
+            CountryCode,
+            Name,
+            Continent,
+            Capital,
+            CurrencyCode,
+            CountryDialNumber
+        FROM [dbo].[Country]
+        ORDER BY Name
+        OFFSET @Offset ROWS
+        FETCH NEXT @PageSize ROWS ONLY;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50002, 'No countries found for the specified page.', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: PageNumber=' + CAST(@PageNumber AS NVARCHAR(10)) + 
+            ', PageSize=' + CAST(@PageSize AS NVARCHAR(10)) + 
+            ', CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        THROW;
+    END CATCH
+END;
+GO
+
+USE [ConnectSphereDb]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[SP_GetAllCountriesNoPagination]
+    @CorrelationId NVARCHAR(36) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        SELECT 
+            CountryId,
+            CountryCode,
+            Name,
+            Continent,
+            Capital,
+            CurrencyCode,
+            CountryDialNumber
+        FROM [dbo].[Country]
+        ORDER BY Name;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50002, 'No countries found.', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        THROW;
+    END CATCH
+END;
+GO
+
+USE [ConnectSphereDb]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[SP_GetCountryById]
+    @CountryId UNIQUEIDENTIFIER,
+    @CorrelationId NVARCHAR(36) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF @CountryId = '00000000-0000-0000-0000-000000000000'
+        BEGIN
+            THROW 50003, 'Invalid CountryId provided.', 1;
+        END
+
+        SELECT 
+            CountryId,
+            CountryCode,
+            Name,
+            Continent,
+            Capital,
+            CurrencyCode,
+            CountryDialNumber
+        FROM [dbo].[Country]
+        WHERE CountryId = @CountryId;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50004, 'Country not found.', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: CountryId=' + CAST(@CountryId AS NVARCHAR(36)) + 
+            ', CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        THROW;
+    END CATCH
+END;
+GO
+
+USE [ConnectSphereDb]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[SP_GetCountryByCode]
+    @CountryCode NVARCHAR(3),
+    @CorrelationId NVARCHAR(36) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF @CountryCode = '' OR @CountryCode IS NULL
+        BEGIN
+            THROW 50005, 'Invalid CountryCode provided.', 1;
+        END
+
+        SELECT 
+            CountryId,
+            CountryCode,
+            Name,
+            Continent,
+            Capital,
+            CurrencyCode,
+            CountryDialNumber
+        FROM [dbo].[Country]
+        WHERE CountryCode = @CountryCode;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50006, 'Country not found for the specified code.', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: CountryCode=' + ISNULL(@CountryCode, 'NULL') + 
+            ', CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        THROW;
+    END CATCH
+END;
+GO
 
 -- Populate Country table with all 250 countries and territories (ISO 3166-1, 2025 data)
 INSERT INTO Country (CountryCode, Name, Continent, Capital, CurrencyCode, CountryDialNumber)
