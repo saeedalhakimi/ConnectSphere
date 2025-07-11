@@ -60,17 +60,9 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers
                     request.LastName,
                     request.Title,
                     request.Suffix);
-                if (!nameResult.IsSuccess)
-                {
-                    _logger.LogWarning("PersonName creation failed: {Errors}. CorrelationId: {CorrelationId}",
-                        string.Join("; ", nameResult.Errors.Select(e => e.Message)), request.CorrelationId);
-                    return OperationResult<bool>.Failure(
-                        nameResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
-                }
-
 
                 var person = personResult.Data;
-                var updatedName = nameResult.Data!;
+                var updatedName = nameResult;
 
                 var updatedingPerson = person!.UpdateName(updatedName, request.CorrelationId);
                 if (!updatedingPerson.IsSuccess)

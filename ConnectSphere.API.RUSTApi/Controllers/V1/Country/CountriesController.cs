@@ -24,7 +24,7 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Country
             _logger = logger;
         }
 
-        [HttpGet(Name = "GetAllCountries")]
+        [HttpGet(Name = "GetAllCountries")] // api/v1/countries
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetAllCountries(CancellationToken cancellationToken)
@@ -45,7 +45,7 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Country
             return Ok(result);
         }
 
-        [HttpGet(ApiRoutes.CountryRoutes.GetByCountryID, Name = "GetByCountryID")]
+        [HttpGet(ApiRoutes.CountryRoutes.ById, Name = "GetByCountryID")] // api/v1/countries/{countryId}
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -70,7 +70,7 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Country
             return Ok(result);
         }
 
-        [HttpGet(ApiRoutes.CountryRoutes.GetByCountryCode, Name = "GetByCountryCode")]
+        [HttpGet(ApiRoutes.CountryRoutes.ByCode, Name = "GetByCountryCode")] // api/v1/countries/by-code/{countryCode}
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -95,7 +95,7 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Country
             return Ok(result);
         }
 
-        [HttpGet(ApiRoutes.CountryRoutes.GetByCountryName, Name = "GetByCountryName")]
+        [HttpGet(ApiRoutes.CountryRoutes.ByName, Name = "GetByCountryName")] // api/v1/countries/by-name/{name}
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]

@@ -49,17 +49,11 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers
                 // Create person name
                 _logger.LogInformation("Creating PersonName. CorrelationId: {CorrelationId}", request.CorrelationId);
                 var nameResult = PersonName.Create(request.FirstName, request.MiddleName, request.LastName, request.Title, request.Suffix);
-                if (!nameResult.IsSuccess)
-                {
-                    _logger.LogWarning("PersonName creation failed: {Errors}. CorrelationId: {CorrelationId}",
-                        string.Join("; ", nameResult.Errors.Select(e => e.Message)), request.CorrelationId);
-                    return OperationResult<PersonResponseDto>.Failure(
-                        nameResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
-                }
+               
 
                 // Create person
                 _logger.LogInformation("Creating Person entity. CorrelationId: {CorrelationId}", request.CorrelationId);
-                var personResult = Person.Create(Guid.NewGuid(), nameResult.Data!);
+                var personResult = Person.Create(Guid.NewGuid(), nameResult!);
                 if (!personResult.IsSuccess)
                 {
                     _logger.LogWarning("Person creation failed: {Errors}. CorrelationId: {CorrelationId}",

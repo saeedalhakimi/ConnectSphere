@@ -5,6 +5,7 @@ using ConnectSphere.API.Domain.Aggregate;
 using ConnectSphere.API.Domain.Common.Enums;
 using ConnectSphere.API.Domain.Common.Models;
 using ConnectSphere.API.Domain.Entities.Persons;
+using ConnectSphere.API.Domain.Exceptions;
 using ConnectSphere.API.Domain.IRepositories;
 using ConnectSphere.API.Domain.ValueObjects;
 using ConnectSphere.API.Infrastructure.Data.DataWrapperFactory;
@@ -138,16 +139,11 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                         reader.GetString(reader.GetOrdinal("LastName")),
                         reader.IsDBNull(reader.GetOrdinal("Title")) ? null : reader.GetString(reader.GetOrdinal("Title")),
                         reader.IsDBNull(reader.GetOrdinal("Suffix")) ? null : reader.GetString(reader.GetOrdinal("Suffix")));
-                    if (!nameResult.IsSuccess) 
-                    {
-                        _logger.LogWarning("Failed to create PersonName for PersonId: {PersonId}. Errors: {Errors}",
-                            personId, string.Join("; ", nameResult.Errors.Select(e => e.Message)));
-                        return OperationResult<Person>.Failure(nameResult.Errors);
-                    }
+                   
 
                     var person = Person.Create(
                         reader.GetGuid(reader.GetOrdinal("PersonId")),
-                        nameResult.Data!,
+                        nameResult,
                         reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
                         reader.IsDBNull(reader.GetOrdinal("UpdatedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
                         reader.GetBoolean(reader.GetOrdinal("IsDeleted")));
@@ -269,21 +265,16 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                 while (await reader.ReadAsync(cancellationToken))
                 {
                     var nameResult = PersonName.Create(
-                        reader.GetString(reader.GetOrdinal("FirstName")),
+                        /*reader.GetString(reader.GetOrdinal("FirstName"))*/null,
                         reader.IsDBNull(reader.GetOrdinal("MiddleName")) ? null : reader.GetString(reader.GetOrdinal("MiddleName")),
                         reader.GetString(reader.GetOrdinal("LastName")),
                         reader.IsDBNull(reader.GetOrdinal("Title")) ? null : reader.GetString(reader.GetOrdinal("Title")),
                         reader.IsDBNull(reader.GetOrdinal("Suffix")) ? null : reader.GetString(reader.GetOrdinal("Suffix")));
-                    if (!nameResult.IsSuccess)
-                    {
-                        _logger.LogWarning("Failed to create PersonName for PersonId: {PersonId}. Errors: {Errors}",
-                            reader.GetGuid(reader.GetOrdinal("PersonId")), string.Join("; ", nameResult.Errors.Select(e => e.Message)));
-                        return OperationResult<IReadOnlyList<Person>>.Failure(nameResult.Errors);
-                    }
+                    
 
                     var person = Person.Create(
                         reader.GetGuid(reader.GetOrdinal("PersonId")),
-                        nameResult.Data!,
+                        nameResult,
                         reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
                         reader.IsDBNull(reader.GetOrdinal("UpdatedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
                         reader.GetBoolean(reader.GetOrdinal("IsDeleted")));
@@ -315,6 +306,11 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                 _logger.LogWarning("Fetch persons operation was canceled for PageNumber: {PageNumber}, PageSize: {PageSize}. Exception: {Exception}", pageNumber, pageSize, ex.Message);
                 return _errorHandlingService.HandleCancelationToken<IReadOnlyList<Person>>(ex, correlationId);
             }
+            //catch(PersonNameNotValidException ex)
+            //{
+            //    _logger.LogError(ex, "Person Name not valid for PageNumber: {message}, ", ex.Message);
+            //    return _errorHandlingService.HandleException<IReadOnlyList<Person>>(ex, correlationId);
+            //}
             catch (SqlException ex)
             {
                 _logger.LogError(ex, "Database error occurred while fetching persons for PageNumber: {PageNumber}, PageSize: {PageSize}", pageNumber, pageSize);

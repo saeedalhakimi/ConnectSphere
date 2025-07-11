@@ -1,5 +1,7 @@
 ﻿using Asp.Versioning;
+using ConnectSphere.API.Application.Contracts.Dtos.GovernmentalInfosDtos.Requests;
 using ConnectSphere.API.Application.Contracts.PersonDtos.Requests;
+using ConnectSphere.API.Application.MediatoRs.GovernmentalInfos.Commands;
 using ConnectSphere.API.Application.MediatoRs.Persons.Commands;
 using ConnectSphere.API.Application.MediatoRs.Persons.Queries;
 using ConnectSphere.API.Common.IClocking;
@@ -13,7 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ConnectSphere.API.RUSTApi.Controllers.V1.Person
 {
     [ApiVersion("1.0")]
-    [Route(ApiRoutes.BaseRoute)]
+    [Route(ApiRoutes.BaseRoute)] // api/v1/persons
     [ApiController]
     public class PersonsController : BaseController<PersonsController>
     {
@@ -27,7 +29,29 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Person
             _systemClocks = systemClocking ?? throw new ArgumentNullException(nameof(systemClocking));
         }
 
-        [HttpPost(ApiRoutes.PersonRoutes.CreatePerson, Name = "CreatePerson")]
+        [HttpGet(Name = "GetPersons")] // GET api/v1/persons
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetPersons([FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
+        {
+            var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
+            using var scope = _logger.BeginScope(new Dictionary<string, object> { { "CorrelationId", correlationId } });
+            _logger.LogRequest(HttpContext.Request.Method, HttpContext.Request.Path, correlationId);
+            _logger.LogInformation("Retrieving all persons with CorrelationId: {CorrelationId}", correlationId);
+            var query = new GetAllPersonsQuery(pageNumber, pageSize, correlationId);
+            var result = await _mediator.Send(query, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                _logger.LogError(null, "Failed to retrieve persons. Errors: {Errors}. CorrelationId: {CorrelationId}",
+                    string.Join(", ", result.Errors.Select(e => e.Message)), correlationId);
+                return HandleResult(result, correlationId);
+            }
+            _logger.LogInformation("Persons retrieved successfully. CorrelationId: {CorrelationId}", correlationId);
+            return Ok(result);
+        }
+
+        [HttpPost(Name = "CreatePerson")] // POST api/v1/persons
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
@@ -51,7 +75,7 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Person
             return CreatedAtRoute("GetPersonById", new { personId = result.Data.PersonId }, result);
         }
 
-        [HttpGet(ApiRoutes.PersonRoutes.PersonById, Name = "GetPersonById")]
+        [HttpGet(ApiRoutes.PersonRoutes.GetById, Name = "GetPersonById")] // GET api/v1/persons/{personId}
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -75,29 +99,9 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Person
             return Ok(result);
         }
 
-        [HttpGet(ApiRoutes.PersonRoutes.GetPersons,Name = "GetPersons")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> GetPersons([FromQuery] int pageNumber = 1,
-            [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
-        {
-            var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
-            using var scope = _logger.BeginScope(new Dictionary<string, object> { { "CorrelationId", correlationId } });
-            _logger.LogRequest(HttpContext.Request.Method, HttpContext.Request.Path, correlationId);
-            _logger.LogInformation("Retrieving all persons with CorrelationId: {CorrelationId}", correlationId);
-            var query = new GetAllPersonsQuery(pageNumber, pageSize, correlationId);
-            var result = await _mediator.Send(query, cancellationToken);
-            if (!result.IsSuccess)
-            {
-                _logger.LogError(null, "Failed to retrieve persons. Errors: {Errors}. CorrelationId: {CorrelationId}",
-                    string.Join(", ", result.Errors.Select(e => e.Message)), correlationId);
-                return HandleResult(result, correlationId);
-            }
-            _logger.LogInformation("Persons retrieved successfully. CorrelationId: {CorrelationId}", correlationId);
-            return Ok(result);
-        }
+        
 
-        [HttpPut(ApiRoutes.PersonRoutes.UpdatePerson, Name = "UpdatePerson")]
+        [HttpPut(ApiRoutes.PersonRoutes.Update, Name = "UpdatePerson")] // PUT api/v1/persons/{personId}
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -122,7 +126,7 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Person
             return Ok(result);
         }
 
-        [HttpDelete(ApiRoutes.PersonRoutes.DeletePerson, Name = "DeletePerson")]
+        [HttpDelete(ApiRoutes.PersonRoutes.Delete, Name = "DeletePerson")] // DELETE api/v1/persons/{personId}
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -143,6 +147,31 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1.Person
             }
             _logger.LogInformation("Person with ID: {PersonId} deleted successfully. CorrelationId: {CorrelationId}", personId, correlationId);
             return NoContent();
+        }
+
+        [HttpPost(ApiRoutes.PersonRoutes.GovernmentalInfo, Name = "AddPersonGovrenmentalInfo")] // POST api/v1/persons/{personId}/governmental-info
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [ValidateGuid("personId")]
+        [ValidateModel]
+        public async Task<IActionResult> AddPersonGovrenmentalInfo([FromRoute] string personId, [FromBody] CreateGovernmentalInfoDto dto, CancellationToken cancellationToken)
+        {
+            var correlationId = HttpContext.Items["CorrelationId"]?.ToString() ?? Guid.NewGuid().ToString();
+            using var scope = _logger.BeginScope(new Dictionary<string, object> { { "CorrelationId", correlationId } });
+            _logger.LogRequest(HttpContext.Request.Method, HttpContext.Request.Path, correlationId);
+            _logger.LogInformation("Adding governmental info for person with ID: {PersonId} and CorrelationId: {CorrelationId}", personId, correlationId);
+            var command = new CreateGovernmentalInfoCommand(Guid.Parse(personId), dto.CountryId, dto.GovIdNumber, dto.PassportNumber, correlationId);
+            var result = await _mediator.Send(command, cancellationToken);
+            if (!result.IsSuccess)
+            {
+                _logger.LogError(null, "Failed to add governmental info for person with ID: {PersonId}. Errors: {Errors}. CorrelationId: {CorrelationId}",
+                    personId, string.Join(", ", result.Errors.Select(e => e.Message)), correlationId);
+                return HandleResult(result, correlationId);
+            }
+            _logger.LogInformation("Governmental info added successfully for person with ID: {PersonId}. CorrelationId: {CorrelationId}", personId, correlationId);
+            return CreatedAtRoute("GetPersonById", new { personId = result.Data.PersonId }, result);
         }
     }
 }

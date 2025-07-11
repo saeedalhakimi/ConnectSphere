@@ -294,6 +294,77 @@ BEGIN
 END;
 GO
 
+USE [ConnectSphereDb]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[SP_GetCountryByName]
+    @Name NVARCHAR(100),
+    @CorrelationId NVARCHAR(36) = NULL
+AS
+BEGIN
+    SET NOCOUNT ON;
+    BEGIN TRY
+        IF @Name = '' OR @Name IS NULL
+        BEGIN
+            THROW 50007, 'Invalid Country Name provided.', 1;
+        END
+
+        SELECT 
+            CountryId,
+            CountryCode,
+            Name,
+            Continent,
+            Capital,
+            CurrencyCode,
+            CountryDialNumber
+        FROM [dbo].[Country]
+        WHERE Name = @Name;
+
+        IF @@ROWCOUNT = 0
+        BEGIN
+            THROW 50008, 'Country not found for the specified name.', 1;
+        END
+    END TRY
+    BEGIN CATCH
+        DECLARE @ErrorNumber INT = ERROR_NUMBER();
+        DECLARE @ErrorMessage NVARCHAR(MAX) = ERROR_MESSAGE();
+        DECLARE @ErrorProcedure NVARCHAR(128) = ERROR_PROCEDURE();
+        DECLARE @ErrorLine INT = ERROR_LINE();
+        DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
+        DECLARE @ErrorState INT = ERROR_STATE();
+        DECLARE @AdditionalInfo NVARCHAR(MAX) = 
+            'Parameters: Name=' + ISNULL(@Name, 'NULL') + 
+            ', CorrelationId=' + ISNULL(@CorrelationId, 'NULL');
+
+        INSERT INTO dbo.ErrorLog (
+            ErrorNumber,
+            ErrorMessage,
+            ErrorProcedure,
+            ErrorLine,
+            ErrorSeverity,
+            ErrorState,
+            CorrelationId,
+            AdditionalInfo
+        )
+        VALUES (
+            @ErrorNumber,
+            @ErrorMessage,
+            @ErrorProcedure,
+            @ErrorLine,
+            @ErrorSeverity,
+            @ErrorState,
+            @CorrelationId,
+            @AdditionalInfo
+        );
+
+        THROW;
+    END CATCH
+END;
+GO
+
 -- Populate Country table with all 250 countries and territories (ISO 3166-1, 2025 data)
 INSERT INTO Country (CountryCode, Name, Continent, Capital, CurrencyCode, CountryDialNumber)
 VALUES

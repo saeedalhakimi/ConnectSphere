@@ -9,18 +9,27 @@
         /// </summary>
         public static class PersonRoutes
         {
-            public const string CreatePerson = "create";
-            public const string PersonById = "get-by-id/{personId}";
-            public const string GetPersons = "get-all-persons";
-            public const string UpdatePerson = "update/{personId}";
-            public const string DeletePerson = "delete/{personId}";
+            public const string GetById = "{personId}";
+            public const string GetAll = ""; // GET on Base
+            public const string Create = ""; // POST on Base
+            public const string Update = "{personId}"; // PUT on Base/{id}
+            public const string Delete = "{personId}"; // DELETE on Base/{id}
+
+            // Subresource
+            public const string GovernmentalInfo = "{personId}/governmental-info"; // POST on Base/{personId}/governmental-info
+
         }
 
         public static class  CountryRoutes
         {
-            public const string GetByCountryID = "get-by-id/{countryId}";
-            public const string GetByCountryCode = "get-by-code/{countryCode}";
-            public const string GetByCountryName = "get-by-name/{name}";
+            // GET /countries/{countryId}
+            public const string ById = "{countryId}";
+
+            // GET /countries/by-code/{countryCode}
+            public const string ByCode = "by-code/{countryCode}";
+
+            // GET /countries/by-name/{name}
+            public const string ByName = "by-name/{name}";
         }
 
 
