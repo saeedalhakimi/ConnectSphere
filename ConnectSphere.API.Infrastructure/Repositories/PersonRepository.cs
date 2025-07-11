@@ -265,7 +265,7 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                 while (await reader.ReadAsync(cancellationToken))
                 {
                     var nameResult = PersonName.Create(
-                        /*reader.GetString(reader.GetOrdinal("FirstName"))*/null,
+                        reader.GetString(reader.GetOrdinal("FirstName")),
                         reader.IsDBNull(reader.GetOrdinal("MiddleName")) ? null : reader.GetString(reader.GetOrdinal("MiddleName")),
                         reader.GetString(reader.GetOrdinal("LastName")),
                         reader.IsDBNull(reader.GetOrdinal("Title")) ? null : reader.GetString(reader.GetOrdinal("Title")),
