@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ConnectSphere.API.Domain.IRepositories
+namespace ConnectSphere.API.Application.DomainRepositories.IRepositories
 {
     public interface IGovernmentalInfoRepository
     {

@@ -1,4 +1,5 @@
-﻿using ConnectSphere.API.Common.Events;
+﻿
+using ConnectSphere.API.Domain.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;

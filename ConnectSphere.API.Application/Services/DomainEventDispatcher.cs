@@ -1,5 +1,4 @@
-﻿using ConnectSphere.API.Common.Events;
-using ConnectSphere.API.Common.ILogging;
+﻿using ConnectSphere.API.Common.ILogging;
 using ConnectSphere.API.Domain.Events;
 using System;
 using System.Collections.Generic;

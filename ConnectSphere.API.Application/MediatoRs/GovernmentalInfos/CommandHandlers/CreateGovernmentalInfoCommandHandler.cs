@@ -1,5 +1,6 @@
 ﻿using ConnectSphere.API.Application.Contracts.Dtos.GovernmentalInfosDtos;
 using ConnectSphere.API.Application.Contracts.Dtos.GovernmentalInfosDtos.Responses;
+using ConnectSphere.API.Application.DomainRepositories.IRepositories;
 using ConnectSphere.API.Application.MediatoRs.GovernmentalInfos.Commands;
 using ConnectSphere.API.Application.Services;
 using ConnectSphere.API.Common.ILogging;
@@ -7,7 +8,6 @@ using ConnectSphere.API.Domain.Common.Enums;
 using ConnectSphere.API.Domain.Common.Models;
 using ConnectSphere.API.Domain.Entities.Persons;
 using ConnectSphere.API.Domain.Exceptions;
-using ConnectSphere.API.Domain.IRepositories;
 using ConnectSphere.API.Domain.ValueObjects;
 using MediatR;
 using System;

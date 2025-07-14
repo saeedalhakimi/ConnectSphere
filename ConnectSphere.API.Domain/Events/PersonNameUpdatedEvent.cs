@@ -1,12 +1,4 @@
-﻿using ConnectSphere.API.Common.Events;
-using ConnectSphere.API.Domain.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConnectSphere.API.Domain.Events
+﻿namespace ConnectSphere.API.Domain.Events
 {
     public record PersonNameUpdatedEvent(Guid PersonId, PersonName Name, string? CorrelationId) : IDomainEvent
     {

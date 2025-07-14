@@ -1,4 +1,5 @@
-﻿using ConnectSphere.API.Application.Services;
+﻿using ConnectSphere.API.Application.DomainRepositories.IRepositories;
+using ConnectSphere.API.Application.Services;
 using ConnectSphere.API.Common.IClocking;
 using ConnectSphere.API.Common.ILogging;
 using ConnectSphere.API.Domain.Aggregate;
@@ -6,7 +7,6 @@ using ConnectSphere.API.Domain.Common.Enums;
 using ConnectSphere.API.Domain.Common.Models;
 using ConnectSphere.API.Domain.Entities.Persons;
 using ConnectSphere.API.Domain.Exceptions;
-using ConnectSphere.API.Domain.IRepositories;
 using ConnectSphere.API.Domain.ValueObjects;
 using ConnectSphere.API.Infrastructure.Data.DataWrapperFactory;
 using Microsoft.Data.SqlClient;

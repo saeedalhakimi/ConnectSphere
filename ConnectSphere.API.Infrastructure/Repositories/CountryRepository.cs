@@ -1,10 +1,11 @@
-﻿using ConnectSphere.API.Application.Services;
+﻿using ConnectSphere.API.Application.DomainRepositories.IRepositories;
+using ConnectSphere.API.Application.Services;
 using ConnectSphere.API.Common.IClocking;
 using ConnectSphere.API.Common.ILogging;
 using ConnectSphere.API.Domain.Common.Enums;
 using ConnectSphere.API.Domain.Common.Models;
 using ConnectSphere.API.Domain.Entities.Persons;
-using ConnectSphere.API.Domain.IRepositories;
+using ConnectSphere.API.Domain.ValueObjects;
 using ConnectSphere.API.Infrastructure.Data.DataWrapperFactory;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -64,8 +65,7 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                 var countries = new List<Country>();
                 while (await reader.ReadAsync(cancellationToken))
                 {
-                    var countryResult = Country.Create(
-                        reader.GetGuid(reader.GetOrdinal("CountryId")),
+                    var countryDetails = CountryDetails.Create(
                         reader.GetString(reader.GetOrdinal("CountryCode")),
                         reader.GetString(reader.GetOrdinal("Name")),
                         reader.IsDBNull(reader.GetOrdinal("Continent")) ? null : reader.GetString(reader.GetOrdinal("Continent")),
@@ -73,14 +73,10 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                         reader.IsDBNull(reader.GetOrdinal("CurrencyCode")) ? null : reader.GetString(reader.GetOrdinal("CurrencyCode")),
                         reader.IsDBNull(reader.GetOrdinal("CountryDialNumber")) ? null : reader.GetString(reader.GetOrdinal("CountryDialNumber")));
 
-                    if (!countryResult.IsSuccess)
-                    {
-                        _logger.LogWarning("Failed to create Country for CountryId: {CountryId}. Errors: {Errors}",
-                            reader.GetGuid(reader.GetOrdinal("CountryId")), string.Join("; ", countryResult.Errors.Select(e => e.Message)));
-                        return OperationResult<IReadOnlyList<Country>>.Failure(countryResult.Errors);
-                    }
+                    var country = Country.Reconstruct(
+                        reader.GetGuid(reader.GetOrdinal("CountryId")), countryDetails);
 
-                    countries.Add(countryResult.Data!);
+                    countries.Add(country);
                 }
 
                 _logger.LogInformation("Fetched {Count} countries successfully", countries.Count);
@@ -132,8 +128,7 @@ namespace ConnectSphere.API.Infrastructure.Repositories
 
                 while (await reader.ReadAsync(cancellationToken))
                 {
-                    var countryResult = Country.Create(
-                        reader.GetGuid(reader.GetOrdinal("CountryId")),
+                    var countryDetails = CountryDetails.Create(
                         reader.GetString(reader.GetOrdinal("CountryCode")),
                         reader.GetString(reader.GetOrdinal("Name")),
                         reader.IsDBNull(reader.GetOrdinal("Continent")) ? null : reader.GetString(reader.GetOrdinal("Continent")),
@@ -141,14 +136,10 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                         reader.IsDBNull(reader.GetOrdinal("CurrencyCode")) ? null : reader.GetString(reader.GetOrdinal("CurrencyCode")),
                         reader.IsDBNull(reader.GetOrdinal("CountryDialNumber")) ? null : reader.GetString(reader.GetOrdinal("CountryDialNumber")));
 
-                    if (!countryResult.IsSuccess)
-                    {
-                        _logger.LogWarning("Failed to create Country for CountryId: {CountryId}. Errors: {Errors}",
-                            reader.GetGuid(reader.GetOrdinal("CountryId")), string.Join("; ", countryResult.Errors.Select(e => e.Message)));
-                        return OperationResult<IReadOnlyList<Country>>.Failure(countryResult.Errors);
-                    }
+                    var country = Country.Reconstruct(
+                        reader.GetGuid(reader.GetOrdinal("CountryId")), countryDetails);
 
-                    countries.Add(countryResult.Data!);
+                    countries.Add(country);
                 }
 
                 _logger.LogInformation("Fetched {Count} countries successfully for PageNumber: {PageNumber}, PageSize: {PageSize}", countries.Count, pageNumber, pageSize);
@@ -207,24 +198,19 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                 using var reader = await command.ExecuteReaderAsync(cancellationToken);
                 if (await reader.ReadAsync(cancellationToken))
                 {
-                    var countryResult = Country.Create(
-                        reader.GetGuid(reader.GetOrdinal("CountryId")),
+                    var countryDetails = CountryDetails.Create(
                         reader.GetString(reader.GetOrdinal("CountryCode")),
                         reader.GetString(reader.GetOrdinal("Name")),
                         reader.IsDBNull(reader.GetOrdinal("Continent")) ? null : reader.GetString(reader.GetOrdinal("Continent")),
                         reader.IsDBNull(reader.GetOrdinal("Capital")) ? null : reader.GetString(reader.GetOrdinal("Capital")),
                         reader.IsDBNull(reader.GetOrdinal("CurrencyCode")) ? null : reader.GetString(reader.GetOrdinal("CurrencyCode")),
                         reader.IsDBNull(reader.GetOrdinal("CountryDialNumber")) ? null : reader.GetString(reader.GetOrdinal("CountryDialNumber")));
-
-                    if (!countryResult.IsSuccess)
-                    {
-                        _logger.LogWarning("Failed to create Country for CountryCode: {CountryCode}. Errors: {Errors}",
-                            countryCode, string.Join("; ", countryResult.Errors.Select(e => e.Message)));
-                        return OperationResult<Country>.Failure(countryResult.Errors);
-                    }
+                   
+                    var countryResult = Country.Reconstruct(
+                        reader.GetGuid(reader.GetOrdinal("CountryId")), countryDetails);
 
                     _logger.LogInformation("Country fetched successfully for CountryCode: {CountryCode}", countryCode);
-                    return OperationResult<Country>.Success(countryResult.Data!);
+                    return OperationResult<Country>.Success(countryResult);
                 }
 
                 _logger.LogWarning("Country not found for CountryCode: {CountryCode}", countryCode);
@@ -287,8 +273,7 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                 using var reader = await command.ExecuteReaderAsync(cancellationToken);
                 if (await reader.ReadAsync(cancellationToken))
                 {
-                    var countryResult = Country.Create(
-                        reader.GetGuid(reader.GetOrdinal("CountryId")),
+                    var countryDetails = CountryDetails.Create(
                         reader.GetString(reader.GetOrdinal("CountryCode")),
                         reader.GetString(reader.GetOrdinal("Name")),
                         reader.IsDBNull(reader.GetOrdinal("Continent")) ? null : reader.GetString(reader.GetOrdinal("Continent")),
@@ -296,15 +281,11 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                         reader.IsDBNull(reader.GetOrdinal("CurrencyCode")) ? null : reader.GetString(reader.GetOrdinal("CurrencyCode")),
                         reader.IsDBNull(reader.GetOrdinal("CountryDialNumber")) ? null : reader.GetString(reader.GetOrdinal("CountryDialNumber")));
 
-                    if (!countryResult.IsSuccess)
-                    {
-                        _logger.LogWarning("Failed to create Country for CountryId: {CountryId}. Errors: {Errors}",
-                            countryId, string.Join("; ", countryResult.Errors.Select(e => e.Message)));
-                        return OperationResult<Country>.Failure(countryResult.Errors);
-                    }
+                    var countryResult = Country.Reconstruct(
+                        reader.GetGuid(reader.GetOrdinal("CountryId")), countryDetails);
 
                     _logger.LogInformation("Country fetched successfully for CountryId: {CountryId}", countryId);
-                    return OperationResult<Country>.Success(countryResult.Data!);
+                    return OperationResult<Country>.Success(countryResult);
                 }
 
                 _logger.LogWarning("Country not found for CountryId: {CountryId}", countryId);
@@ -367,8 +348,7 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                 using var reader = await command.ExecuteReaderAsync(cancellationToken);
                 if (await reader.ReadAsync(cancellationToken))
                 {
-                    var countryResult = Country.Create(
-                        reader.GetGuid(reader.GetOrdinal("CountryId")),
+                    var countryDetails = CountryDetails.Create(
                         reader.GetString(reader.GetOrdinal("CountryCode")),
                         reader.GetString(reader.GetOrdinal("Name")),
                         reader.IsDBNull(reader.GetOrdinal("Continent")) ? null : reader.GetString(reader.GetOrdinal("Continent")),
@@ -376,15 +356,11 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                         reader.IsDBNull(reader.GetOrdinal("CurrencyCode")) ? null : reader.GetString(reader.GetOrdinal("CurrencyCode")),
                         reader.IsDBNull(reader.GetOrdinal("CountryDialNumber")) ? null : reader.GetString(reader.GetOrdinal("CountryDialNumber")));
 
-                    if (!countryResult.IsSuccess)
-                    {
-                        _logger.LogWarning("Failed to create Country for Name: {Name}. Errors: {Errors}",
-                            name, string.Join("; ", countryResult.Errors.Select(e => e.Message)));
-                        return OperationResult<Country>.Failure(countryResult.Errors);
-                    }
+                    var country = Country.Reconstruct(
+                        reader.GetGuid(reader.GetOrdinal("CountryId")), countryDetails);
 
                     _logger.LogInformation("Country fetched successfully for Name: {Name}", name);
-                    return OperationResult<Country>.Success(countryResult.Data!);
+                    return OperationResult<Country>.Success(country);
                 }
                 _logger.LogWarning("Country not found for Name: {Name}", name);
                 return OperationResult<Country>.Failure(new Error(

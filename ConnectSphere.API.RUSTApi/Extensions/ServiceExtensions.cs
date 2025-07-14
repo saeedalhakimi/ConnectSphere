@@ -1,5 +1,5 @@
-﻿using ConnectSphere.API.Application.Services;
-using ConnectSphere.API.Domain.IRepositories;
+﻿using ConnectSphere.API.Application.DomainRepositories.IRepositories;
+using ConnectSphere.API.Application.Services;
 using ConnectSphere.API.Infrastructure.Repositories;
 
 namespace ConnectSphere.API.RUSTApi.Extensions

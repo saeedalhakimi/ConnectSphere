@@ -1,11 +1,11 @@
 ﻿using ConnectSphere.API.Application.Contracts.CounteryDtos;
 using ConnectSphere.API.Application.Contracts.CounteryDtos.Responses;
+using ConnectSphere.API.Application.DomainRepositories.IRepositories;
 using ConnectSphere.API.Application.MediatoRs.Countries.Queries;
 using ConnectSphere.API.Application.Services;
 using ConnectSphere.API.Common.ILogging;
 using ConnectSphere.API.Domain.Common.Enums;
 using ConnectSphere.API.Domain.Common.Models;
-using ConnectSphere.API.Domain.IRepositories;
 using MediatR;
 using System;
 using System.Collections.Generic;

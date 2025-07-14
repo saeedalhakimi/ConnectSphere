@@ -1,44 +1,75 @@
-﻿using ConnectSphere.API.Domain.Common.Enums;
-using ConnectSphere.API.Domain.Common.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConnectSphere.API.Domain.Entities.Persons
+﻿namespace ConnectSphere.API.Domain.Entities.Persons
 {
+    /// <summary>
+    /// Represents a country entity that encapsulates a unique identifier and detailed information.
+    /// </summary>
+    /// <remarks>
+    /// This class is used to store and manage a country’s identity and metadata, such as name, code,
+    /// continent, capital, currency, and dialing code. Validation is enforced at creation and reconstruction.
+    /// </remarks>
     public class Country
     {
+        /// <summary>
+        /// Gets the unique identifier for the country.
+        /// </summary>
         public Guid CountryId { get; private set; }
-        public string CountryCode { get; private set; }
-        public string Name { get; private set; }
-        public string? Continent { get; private set; }
-        public string? Capital { get; private set; }
-        public string? CurrencyCode { get; private set; }
-        public string? CountryDialNumber { get; private set; }
 
-        private Country(Guid countryId, string countryCode, string name, string? continent, string? capital, string? currencyCode, string? countryDialNumber)
+        /// <summary>
+        /// Gets or sets the detailed metadata of the country.
+        /// </summary>
+        /// <remarks>
+        /// This includes properties like the country name, ISO code, continent, currency, and dialing code.
+        /// </remarks>
+        public CountryDetails Details { get; private set; }
+
+        private Country(Guid countryId, CountryDetails countryDetails)
         {
             CountryId = countryId;
-            CountryCode = countryCode;
-            Name = name;
-            Continent = continent;
-            Capital = capital;
-            CurrencyCode = currencyCode;
-            CountryDialNumber = countryDialNumber;
+            Details = countryDetails;
         }
 
-        public static OperationResult<Country> Create(Guid countryId, string countryCode, string name, string? continent, string? capital, string? currencyCode, string? countryDialNumber)
+        /// <summary>
+        /// Creates a new <see cref="Country"/> instance after validating the input values.
+        /// </summary>
+        /// <param name="countryId">The unique identifier for the country.</param>
+        /// <param name="countryDetails">The detailed information about the country.</param>
+        /// <returns>
+        /// A new instance of <see cref="Country"/> with validated inputs.
+        /// </returns>
+        /// <remarks>
+        /// Use this method when creating a new country that doesn't yet exist in the system.
+        /// </remarks>
+        /// <exception cref="CountryNotValidException">
+        /// Thrown if <paramref name="countryId"/> is an empty GUID or if <paramref name="countryDetails"/> is null.
+        /// </exception>
+        public static Country Create(Guid countryId, CountryDetails countryDetails)
         {
-            if (countryId == Guid.Empty)
-                return OperationResult<Country>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "CountryId cannot be empty.");
-            if (string.IsNullOrWhiteSpace(countryCode))
-                return OperationResult<Country>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "CountryCode cannot be empty.");
-            if (string.IsNullOrWhiteSpace(name))
-                return OperationResult<Country>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Name cannot be empty.");
+            DomainValidator.ThrowIfEmptyGuid("countryId", countryId, new CountryNotValidException("CountryId cannot be empty."));
+            DomainValidator.ThrowIfObjectNull("countryDetails", countryDetails, new CountryNotValidException("CountryDetails cannot be null."));
 
-            return OperationResult<Country>.Success(new Country(countryId, countryCode, name, continent, capital, currencyCode, countryDialNumber));
+            return new Country(countryId, countryDetails);
+        }
+
+        /// <summary>
+        /// Reconstructs a <see cref="Country"/> instance from persisted values (e.g., from a database).
+        /// </summary>
+        /// <param name="countryId">The unique identifier for the country.</param>
+        /// <param name="countryDetails">The existing detailed information of the country.</param>
+        /// <returns>
+        /// A reconstructed <see cref="Country"/> object using historical data.
+        /// </returns>
+        /// <remarks>
+        /// This method is typically used to recreate domain entities from storage without triggering new creation logic.
+        /// </remarks>
+        /// <exception cref="CountryNotValidException">
+        /// Thrown if <paramref name="countryId"/> is an empty GUID or if <paramref name="countryDetails"/> is null.
+        /// </exception>
+        public static Country Reconstruct(Guid countryId, CountryDetails countryDetails)
+        {
+            DomainValidator.ThrowIfEmptyGuid("countryId", countryId, new CountryNotValidException("CountryId cannot be empty."));
+            DomainValidator.ThrowIfObjectNull("countryDetails", countryDetails, new CountryNotValidException("CountryDetails cannot be null."));
+
+            return new Country(countryId, countryDetails);
         }
     }
 }

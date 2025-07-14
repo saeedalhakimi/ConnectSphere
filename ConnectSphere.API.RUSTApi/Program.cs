@@ -3,7 +3,6 @@ using ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers;
 using ConnectSphere.API.Application.Services;
 using ConnectSphere.API.Common.IClocking;
 using ConnectSphere.API.Common.ILogging;
-using ConnectSphere.API.Domain.IRepositories;
 using ConnectSphere.API.Infrastructure.Data.DataWrapperFactory;
 using ConnectSphere.API.Infrastructure.Repositories;
 using ConnectSphere.API.RUSTApi.Extensions;

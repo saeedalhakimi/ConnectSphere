@@ -1,11 +1,11 @@
 ﻿using ConnectSphere.API.Application.Contracts.PersonDtos;
 using ConnectSphere.API.Application.Contracts.PersonDtos.Responses;
+using ConnectSphere.API.Application.DomainRepositories.IRepositories;
 using ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers;
 using ConnectSphere.API.Application.MediatoRs.Persons.Queries;
 using ConnectSphere.API.Application.Services;
 using ConnectSphere.API.Common.ILogging;
 using ConnectSphere.API.Domain.Common.Models;
-using ConnectSphere.API.Domain.IRepositories;
 using MediatR;
 using System;
 using System.Collections.Generic;

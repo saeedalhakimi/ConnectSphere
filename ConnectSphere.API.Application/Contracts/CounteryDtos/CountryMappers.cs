@@ -15,12 +15,12 @@ namespace ConnectSphere.API.Application.Contracts.CounteryDtos
             return new CountryResponseDto
             {
                 CountryId = country.CountryId,
-                CountryCode = country.CountryCode,
-                Name = country.Name,
-                Continent = country.Continent,
-                Capital = country.Capital,
-                CurrencyCode = country.CurrencyCode,
-                CountryDialNumber = country.CountryDialNumber
+                CountryCode = country.Details.CountryCode,
+                Name = country.Details.Name,
+                Continent = country.Details.Continent,
+                Capital = country.Details.Capital,
+                CurrencyCode = country.Details.CurrencyCode,
+                CountryDialNumber = country.Details.CountryDialNumber
             };
         }
 
