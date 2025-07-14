@@ -46,25 +46,19 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                // Create person name
+                // Reconstruct person name
                 _logger.LogInformation("Creating PersonName. CorrelationId: {CorrelationId}", request.CorrelationId);
                 var nameResult = PersonName.Create(request.FirstName, request.MiddleName, request.LastName, request.Title, request.Suffix);
                
 
-                // Create person
+                // Reconstruct person
                 _logger.LogInformation("Creating Person entity. CorrelationId: {CorrelationId}", request.CorrelationId);
                 var personResult = Person.Create(Guid.NewGuid(), nameResult!);
-                if (!personResult.IsSuccess)
-                {
-                    _logger.LogWarning("Person creation failed: {Errors}. CorrelationId: {CorrelationId}",
-                        string.Join("; ", personResult.Errors.Select(e => e.Message)), request.CorrelationId);
-                    return OperationResult<PersonResponseDto>.Failure(
-                        personResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
-                }
+               
 
                 // Persist person
                 _logger.LogInformation("Persisting Person to repository. CorrelationId: {CorrelationId}", request.CorrelationId);
-                var persistResult = await _personRepository.CreateAsync(personResult.Data!, request.CorrelationId, cancellationToken);
+                var persistResult = await _personRepository.CreateAsync(personResult, request.CorrelationId, cancellationToken);
                 if (!persistResult.IsSuccess)
                 {
                     _logger.LogWarning("Person persistence failed: {Errors}. CorrelationId: {CorrelationId}",
@@ -91,9 +85,9 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers
                 }
 
                 // Clear domain events
-                personResult.Data.ClearDomainEvents();
+                personResult.ClearDomainEvents();
                 _logger.LogInformation("Cleared domain events for Person {PersonId}. CorrelationId: {CorrelationId}",
-                    personResult.Data!.PersonId, request.CorrelationId);
+                    personResult.PersonId, request.CorrelationId);
 
                 // Map to response DTO
                 var responseDto = new PersonResponseDto(

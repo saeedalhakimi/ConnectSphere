@@ -24,7 +24,16 @@ namespace ConnectSphere.API.RUSTApi.Controllers.V1
             { ErrorCode.InternalServerError, (500, "Internal Server Error") },
             { ErrorCode.ConflictError, (409, "Conflict") },
             { ErrorCode.Unauthorized, (401, "Unauthorized") },
-            { ErrorCode.BadRequest, (400, "Bad Request") }
+            { ErrorCode.BadRequest, (400, "Bad Request") },
+            { ErrorCode.DomainValidationError, (422, "Unprocessable Entity") },
+            { ErrorCode.Locked, (423, "Locked") },
+            { ErrorCode.NoResult, (204, "No Content") },
+            { ErrorCode.InvalidData, (422, "Unprocessable Entity") },
+            { ErrorCode.InvalidOperation, (400, "Bad Request") },
+            { ErrorCode.DatabaseError, (500, "Internal Server Error") },
+            { ErrorCode.AuthorizationError, (403, "Forbidden") },
+            { ErrorCode.ResourceCreationFailed, (500, "Internal Server Error") },
+            { ErrorCode.ResourceUpdateFailed, (500, "Internal Server Error") }
         };
 
         /// <summary>

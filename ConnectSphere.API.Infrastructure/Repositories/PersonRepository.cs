@@ -89,7 +89,7 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                     return OperationResult<Person>.Failure(new Error(
                         ErrorCode.RESOURCECREATIONFAILED,
                         "Creation Failed",
-                        $"Falied To Create Post -rows affected: {rowsAffected}"
+                        $"Falied To Reconstruct Post -rows affected: {rowsAffected}"
                         ));
                 }
             }
@@ -141,21 +141,16 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                         reader.IsDBNull(reader.GetOrdinal("Suffix")) ? null : reader.GetString(reader.GetOrdinal("Suffix")));
                    
 
-                    var person = Person.Create(
+                    var person = Person.Reconstruct(
                         reader.GetGuid(reader.GetOrdinal("PersonId")),
                         nameResult,
                         reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
                         reader.IsDBNull(reader.GetOrdinal("UpdatedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
                         reader.GetBoolean(reader.GetOrdinal("IsDeleted")));
-                    if (!person.IsSuccess)
-                    {
-                        _logger.LogWarning("Failed to create Person for PersonId: {PersonId}. Errors: {Errors}",
-                            personId, string.Join("; ", person.Errors.Select(e => e.Message)));
-                        return OperationResult<Person>.Failure(person.Errors);
-                    }
+                    
 
                     _logger.LogInformation("Person fetched successfully for PersonId: {PersonId}", personId);
-                    return OperationResult<Person>.Success(person.Data!);
+                    return OperationResult<Person>.Success(person);
                 }
 
                 _logger.LogWarning("Person not found for PersonId: {PersonId}", personId);
@@ -272,32 +267,18 @@ namespace ConnectSphere.API.Infrastructure.Repositories
                         reader.IsDBNull(reader.GetOrdinal("Suffix")) ? null : reader.GetString(reader.GetOrdinal("Suffix")));
                     
 
-                    var person = Person.Create(
+                    var person = Person.Reconstruct(
                         reader.GetGuid(reader.GetOrdinal("PersonId")),
                         nameResult,
                         reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
                         reader.IsDBNull(reader.GetOrdinal("UpdatedAt")) ? null : reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
                         reader.GetBoolean(reader.GetOrdinal("IsDeleted")));
-                    if (!person.IsSuccess)
-                    {
-                        _logger.LogWarning("Failed to create Person for PersonId: {PersonId}. Errors: {Errors}",
-                            reader.GetGuid(reader.GetOrdinal("PersonId")), string.Join("; ", person.Errors.Select(e => e.Message)));
-                        return OperationResult<IReadOnlyList<Person>>.Failure(person.Errors);
-                    }
+                    
 
-                    persons.Add(person.Data!);
+                    persons.Add(person);
                 }
 
-                //if (persons.Count == 0)
-                //{
-                //    _logger.LogWarning("No persons found for PageNumber: {PageNumber}, PageSize: {PageSize}", pageNumber, pageSize);
-                //    return OperationResult<IReadOnlyList<Person>>.Failure(new Error(
-                //        ErrorCode.NOTFOUND,
-                //        "NOT_FOUND",
-                //        $"No persons found for PageNumber: {pageNumber}, PageSize: {pageSize}",
-                //        correlationId));
-                //}
-
+                
                 _logger.LogInformation("Fetched {Count} persons successfully for PageNumber: {PageNumber}, PageSize: {PageSize}", persons.Count, pageNumber, pageSize);
                 return OperationResult<IReadOnlyList<Person>>.Success(persons.AsReadOnly());
             }

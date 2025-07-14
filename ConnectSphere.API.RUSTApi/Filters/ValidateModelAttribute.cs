@@ -11,7 +11,7 @@ namespace ConnectSphere.API.RUSTApi.Filters
             // Check if the ModelState has any validation errors
             if (!context.ModelState.IsValid)
             {
-                // Create a custom error response
+                // Reconstruct a custom error response
                 var apiError = new ErrorResponse
                 {
                     StatusCode = 400,

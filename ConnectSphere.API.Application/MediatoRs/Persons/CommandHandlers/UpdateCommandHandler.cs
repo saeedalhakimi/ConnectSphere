@@ -54,30 +54,15 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers
                     return OperationResult<bool>.Failure(personResult.Errors);
                 }
 
-                var nameResult = PersonName.Create(
-                    request.FirstName,
-                    request.MiddleName,
-                    request.LastName,
-                    request.Title,
-                    request.Suffix);
-
                 var person = personResult.Data;
-                var updatedName = nameResult;
 
-                var updatedingPerson = person!.UpdateName(updatedName, request.CorrelationId);
-                if (!updatedingPerson.IsSuccess)
-                {
-                    _logger.LogWarning("Failed to update person name for PersonId: {PersonId}. Errors: {Errors}",
-                        request.PersonId, string.Join("; ", updatedingPerson.Errors.Select(e => e.Message)));
-                    return OperationResult<bool>.Failure(updatedingPerson.Errors);
-                }
-
-                var updatedPerson = updatedingPerson.Data!;
+                var newName = PersonName.Create(request.FirstName, request.MiddleName, request.LastName, request.Title, request.Suffix);
+                person!.UpdateName(newName, request.CorrelationId);
 
                 _logger.LogInformation("Updating person name for PersonId: {PersonId}. New Name: {FirstName} {LastName}",
                     request.PersonId, request.FirstName, request.LastName);
 
-                var updateResult = await _personRepository.UpdateAsync(updatedPerson, request.CorrelationId, cancellationToken);
+                var updateResult = await _personRepository.UpdateAsync(person, request.CorrelationId, cancellationToken);
                 if (!updateResult.IsSuccess)
                 {
                     _logger.LogWarning("Failed to update person in repository for PersonId: {PersonId}. Errors: {Errors}",
@@ -85,11 +70,11 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers
                     return OperationResult<bool>.Failure(updateResult.Errors);
                 }
 
-                if (updatedPerson.DomainEvents.Any())
+                if (person.DomainEvents.Any())
                 {
                     _logger.LogInformation("Dispatching domain events for Person {PersonId}. CorrelationId: {CorrelationId}",
-                        updatedPerson.PersonId, request.CorrelationId);
-                    foreach (var domainEvent in updatedPerson.DomainEvents)
+                        person.PersonId, request.CorrelationId);
+                    foreach (var domainEvent in person.DomainEvents)
                     {
                         await _eventDispatcher.DispatchAsync(domainEvent, cancellationToken);
                     }
@@ -97,11 +82,11 @@ namespace ConnectSphere.API.Application.MediatoRs.Persons.CommandHandlers
                 else
                 {
                     _logger.LogDebug("No domain events to dispatch for Person {PersonId}. CorrelationId: {CorrelationId}",
-                        updatedPerson.PersonId, request.CorrelationId);
+                        person.PersonId, request.CorrelationId);
                 }
 
                 // Clear domain events
-                updatedPerson.ClearDomainEvents();
+                person.ClearDomainEvents();
 
                 _logger.LogInformation("Person name updated successfully for PersonId: {PersonId}. CorrelationId: {CorrelationId}",
                     request.PersonId, request.CorrelationId);

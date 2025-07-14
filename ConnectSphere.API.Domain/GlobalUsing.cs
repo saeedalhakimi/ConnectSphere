@@ -1,0 +1,13 @@
+﻿global using System;
+global using System.Collections.Generic;
+global using System.Linq;
+global using System.Text;
+global using System.Threading.Tasks;
+global using ConnectSphere.API.Domain.Exceptions;
+global using ConnectSphere.API.Domain.Entities.Persons;
+global using ConnectSphere.API.Domain.ValueObjects;
+global using ConnectSphere.API.Common.Events;
+global using ConnectSphere.API.Domain.Common.Enums;
+global using ConnectSphere.API.Domain.Common.Models;
+global using ConnectSphere.API.Domain.DomainValidations;
+global using System.Text.RegularExpressions;

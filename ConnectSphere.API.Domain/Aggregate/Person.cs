@@ -1,15 +1,4 @@
-﻿using ConnectSphere.API.Common.Events;
-using ConnectSphere.API.Domain.Common.Enums;
-using ConnectSphere.API.Domain.Common.Models;
-using ConnectSphere.API.Domain.Entities.Persons;
-using ConnectSphere.API.Domain.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace ConnectSphere.API.Domain.Aggregate
+﻿namespace ConnectSphere.API.Domain.Aggregate
 {
     public class Person
     {
@@ -40,107 +29,94 @@ namespace ConnectSphere.API.Domain.Aggregate
             UpdatedAt = updatedAt;
             IsDeleted = isDeleted;
         }
-
-        public static OperationResult<Person> Create(Guid personId, PersonName name, string? correlationId = null)
+        public static Person Create(Guid personId, PersonName name, string? correlationId = null)
         {
-            if (personId == Guid.Empty)
-                return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "PersonId cannot be empty.");
-            if (name == null)
-                return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Name cannot be null.");
-           
+            DomainValidator.ThrowIfEmptyGuid("PersonId", personId, new PersonNotValidException("Person ID cannot be empty."));
+            DomainValidator.ThrowIfObjectNull("PersonName", name, new PersonNotValidException("Person Name cannot be null."));
+
             var person = new Person(personId, name, DateTime.UtcNow, null, false);
             person._domainEvents.Add(new Events.PersonCreatedEvent(personId, name, correlationId));
-            return OperationResult<Person>.Success(person);
+            return person;
         }
-
-        public static OperationResult<Person> Create(Guid personId, PersonName name, DateTime createdAt, DateTime? updatedAt, bool isDeleted)
+        public static Person Reconstruct(Guid personId, PersonName name, DateTime createdAt, DateTime? updatedAt, bool isDeleted)
         {
-            if (personId == Guid.Empty)
-                return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "PersonId cannot be empty.");
-            if (name == null)
-                return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Name cannot be null.");
+            DomainValidator.ThrowIfEmptyGuid("PersonId", personId, new PersonNotValidException("Person ID cannot be empty."));
+            DomainValidator.ThrowIfObjectNull("PersonName", name, new PersonNotValidException("Person Name cannot be null."));
 
             var person = new Person(personId, name, createdAt, updatedAt, isDeleted);
-            return OperationResult<Person>.Success(person);
+            return person;
         }
-
-        public OperationResult<Person> UpdateName(PersonName newName, string? correlationId = null)
+        public void UpdateName(PersonName newName, string? correlationId = null)
         {
-            if (newName == null)
-                return OperationResult<Person>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "New name cannot be null.", correlationId);
-            if (IsDeleted)
-                return OperationResult<Person>.Failure(ErrorCode.InvalidOperation, "INVALID_OPERATION", "Cannot update a deleted person.", correlationId);
+            DomainValidator.ThrowIfObjectNull("PersonName", newName, new PersonNotValidException("Person new name cannot be null."));
+            DomainValidator.ThrowIfDeleted(IsDeleted, new PersonNotValidException("Operation not allowed: the person has been deleted."));
 
             Name = newName;
             UpdatedAt = DateTime.UtcNow;
             _domainEvents.Add(new Events.PersonNameUpdatedEvent(PersonId, newName, correlationId));
-            return OperationResult<Person>.Success(this);
         }
-        public OperationResult<Address> AddAddress(Address address)
+        public void AddGovernmentalInfo(GovernmentalInfo info)
         {
-            if (address == null || address.PersonId != PersonId)
-                return OperationResult<Address>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Invalid address or person mismatch.");
-            if (_addresses.Any(a => a.AddressId == address.AddressId))
-                return OperationResult<Address>.Failure(ErrorCode.ConflictError, "CONFLICT_ERROR", "Address already exists.");
+            DomainValidator.ThrowIfDeleted(IsDeleted, new PersonNotValidException("Operation not allowed: the person has been deleted."));
+            DomainValidator.ThrowIfMismatch("GovernmentalInfo", info, PersonId, new GovernmentalInfoNotValidException("Governmental info belongs to a different person."));
+            DomainValidator.ThrowIfDuplicate("Governmental info", info.GovernmentalInfoId, _governmentalInfos, g => g.GovernmentalInfoId, new GovernmentalInfoNotValidException("Governmental info already exists."));
+
+            _governmentalInfos.Add(info);
+            UpdatedAt = DateTime.UtcNow;
+
+            _domainEvents.Add(new Events.GovernmentalInfoAddedEvent(
+                PersonId, info.GovernmentalInfoId, info.CountryId, info.Details));
+        }
+        public void AddAddress(Address address)
+        {
+            DomainValidator.ThrowIfDeleted(IsDeleted, new PersonNotValidException("Operation not allowed: the person has been deleted."));
+            DomainValidator.ThrowIfDuplicate("Address", address.AddressId, _addresses, a => a.AddressId, new PersonNotValidException("Address already exists."));
+            DomainValidator.ThrowIfMismatch("Address", address, PersonId, new PersonNotValidException("Address belongs to a different person."));
 
             _addresses.Add(address);
             UpdatedAt = DateTime.UtcNow;
-            _domainEvents.Add(new Events.AddressAddedEvent(PersonId, address.AddressId, address.AddressTypeId, address.Details, address.CountryId));
-            return OperationResult<Address>.Success(address);
+
+            _domainEvents.Add(new Events.AddressAddedEvent(
+                PersonId, address.AddressId, address.AddressTypeId, address.Details, address.CountryId));
         }
-
-        public OperationResult<PhoneNumber> AddPhoneNumber(PhoneNumber phoneNumber)
+        public void AddPhoneNumber(PhoneNumber phoneNumber)
         {
-            if (phoneNumber == null || phoneNumber.PersonId != PersonId)
-                return OperationResult<PhoneNumber>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Invalid phone number or person mismatch.");
-            if (_phoneNumbers.Any(p => p.PhoneNumberId == phoneNumber.PhoneNumberId))
-                return OperationResult<PhoneNumber>.Failure(ErrorCode.ConflictError, "CONFLICT_ERROR", "Phone number already exists.");
-
+            DomainValidator.ThrowIfDeleted(IsDeleted, new PersonNotValidException("Operation not allowed: the person has been deleted."));
+            DomainValidator.ThrowIfDuplicate("Phone number", phoneNumber.PhoneNumberId, _phoneNumbers, p => p.PhoneNumberId, new PersonNotValidException("Phone number already exists."));
+            DomainValidator.ThrowIfMismatch("PhoneNumber", phoneNumber, PersonId, new PersonNotValidException("Phone number belongs to a different person."));
+           
             _phoneNumbers.Add(phoneNumber);
             UpdatedAt = DateTime.UtcNow;
-            _domainEvents.Add(new Events.PhoneNumberAddedEvent(PersonId, phoneNumber.PhoneNumberId, phoneNumber.PhoneNumberTypeId, phoneNumber.Number, phoneNumber.CountryId));
-            return OperationResult<PhoneNumber>.Success(phoneNumber);
+
+            _domainEvents.Add(new Events.PhoneNumberAddedEvent(
+                PersonId, phoneNumber.PhoneNumberId, phoneNumber.PhoneNumberTypeId, phoneNumber.Number, phoneNumber.CountryId));
         }
-
-        public OperationResult<EmailAddress> AddEmailAddress(EmailAddress emailAddress)
+        public void AddEmailAddress(EmailAddress emailAddress)
         {
-            if (emailAddress == null || emailAddress.PersonId != PersonId)
-                return OperationResult<EmailAddress>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Invalid email address or person mismatch.");
-            if (_emailAddresses.Any(e => e.EmailAddressId == emailAddress.EmailAddressId))
-                return OperationResult<EmailAddress>.Failure(ErrorCode.ConflictError, "CONFLICT_ERROR", "Email address already exists.");
-
+            DomainValidator.ThrowIfDeleted(IsDeleted, new PersonNotValidException("Operation not allowed: the person has been deleted."));
+            DomainValidator.ThrowIfDuplicate("Email address", emailAddress.EmailAddressId, _emailAddresses, e => e.EmailAddressId, new PersonNotValidException("Email address already exists."));
+            DomainValidator.ThrowIfMismatch("EmailAddress", emailAddress, PersonId, new PersonNotValidException("Email address belongs to a different person."));
+            
             _emailAddresses.Add(emailAddress);
             UpdatedAt = DateTime.UtcNow;
-            _domainEvents.Add(new Events.EmailAddressAddedEvent(PersonId, emailAddress.EmailAddressId, emailAddress.EmailAddressTypeId, emailAddress.Email));
-            return OperationResult<EmailAddress>.Success(emailAddress);
+
+            _domainEvents.Add(new Events.EmailAddressAddedEvent(
+                PersonId, emailAddress.EmailAddressId, emailAddress.EmailAddressTypeId, emailAddress.Email));
         }
-
-        public OperationResult<GovernmentalInfo> AddGovernmentalInfo(GovernmentalInfo governmentalInfo)
+        public void SetBirthDetails(PersonBirthDetails birthDetails)
         {
-            if (governmentalInfo == null || governmentalInfo.PersonId != PersonId)
-                return OperationResult<GovernmentalInfo>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Invalid governmental info or person mismatch.");
-            if (_governmentalInfos.Any(g => g.GovernmentalInfoId == governmentalInfo.GovernmentalInfoId))
-                return OperationResult<GovernmentalInfo>.Failure(ErrorCode.ConflictError, "CONFLICT_ERROR", "Governmental info already exists.");
-
-            _governmentalInfos.Add(governmentalInfo);
-            UpdatedAt = DateTime.UtcNow;
-            _domainEvents.Add(new Events.GovernmentalInfoAddedEvent(PersonId, governmentalInfo.GovernmentalInfoId, governmentalInfo.CountryId, governmentalInfo.Details));
-            return OperationResult<GovernmentalInfo>.Success(governmentalInfo);
-        }
-
-        public OperationResult<PersonBirthDetails> SetBirthDetails(PersonBirthDetails birthDetails)
-        {
-            if (birthDetails == null || birthDetails.PersonId != PersonId)
-                return OperationResult<PersonBirthDetails>.Failure(ErrorCode.InvalidInput, "INVALID_INPUT", "Invalid birth details or person mismatch.");
+            DomainValidator.ThrowIfDeleted(IsDeleted, new PersonNotValidException("Operation not allowed: the person has been deleted."));
+            DomainValidator.ThrowIfMismatch("BirthDetails", birthDetails, PersonId, new PersonNotValidException("Birth details belong to a different person."));
+            
             if (_birthDetails != null)
-                return OperationResult<PersonBirthDetails>.Failure(ErrorCode.ConflictError, "CONFLICT_ERROR", "Birth details already set.");
+                throw new PersonNotValidException("Birth details already set.");
 
             _birthDetails = birthDetails;
             UpdatedAt = DateTime.UtcNow;
-            _domainEvents.Add(new Events.BirthDetailsSetEvent(PersonId, birthDetails.PersonBirthDetailsId, birthDetails.Details, birthDetails.CountryId));
-            return OperationResult<PersonBirthDetails>.Success(birthDetails);
-        }
 
+            _domainEvents.Add(new Events.BirthDetailsSetEvent(
+                PersonId, birthDetails.PersonBirthDetailsId, birthDetails.Details, birthDetails.CountryId));
+        }
         public void ClearDomainEvents() => _domainEvents.Clear();
     }
 }

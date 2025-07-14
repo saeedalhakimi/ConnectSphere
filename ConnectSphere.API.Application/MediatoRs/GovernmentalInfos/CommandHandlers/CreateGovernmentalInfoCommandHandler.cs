@@ -6,6 +6,7 @@ using ConnectSphere.API.Common.ILogging;
 using ConnectSphere.API.Domain.Common.Enums;
 using ConnectSphere.API.Domain.Common.Models;
 using ConnectSphere.API.Domain.Entities.Persons;
+using ConnectSphere.API.Domain.Exceptions;
 using ConnectSphere.API.Domain.IRepositories;
 using ConnectSphere.API.Domain.ValueObjects;
 using MediatR;
@@ -59,36 +60,13 @@ namespace ConnectSphere.API.Application.MediatoRs.GovernmentalInfos.CommandHandl
                 }
                 var person = personResult.Data;
 
-                // Create GovernmentalInfoDetails
-                var detailsResult = GovernmentalInfoDetails.Create(request.GovIdNumber, request.PassportNumber);
-                if (!detailsResult.IsSuccess)
-                {
-                    _logger.LogWarning("Failed to create GovernmentalInfoDetails for PersonId: {PersonId}. Errors: {Errors}",
-                        request.PersonId, string.Join("; ", detailsResult.Errors.Select(e => e.Message)));
-                    return OperationResult<GovernmentalInfoResponseDto>.Failure(
-                        detailsResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
-                }
-
-                // Create GovernmentalInfo
-                var governmentalInfoResult = GovernmentalInfo.Create(Guid.NewGuid(), request.PersonId, request.CountryId, detailsResult.Data!);
-                if (!governmentalInfoResult.IsSuccess)
-                {
-                    _logger.LogWarning("Failed to create GovernmentalInfo for PersonId: {PersonId}. Errors: {Errors}",
-                        request.PersonId, string.Join("; ", governmentalInfoResult.Errors.Select(e => e.Message)));
-                    return OperationResult<GovernmentalInfoResponseDto>.Failure(
-                        governmentalInfoResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
-                }
-
-                var governmentalInfo = governmentalInfoResult.Data!;
-
-                var addResult = person.AddGovernmentalInfo(governmentalInfo);
-                if (!addResult.IsSuccess)
-                {
-                    _logger.LogWarning("Failed to add GovernmentalInfo to Person for PersonId: {PersonId}. Errors: {Errors}",
-                        request.PersonId, string.Join("; ", addResult.Errors.Select(e => e.Message)));
-                    return OperationResult<GovernmentalInfoResponseDto>.Failure(
-                        addResult.Errors.Select(e => new Error(e.Code, e.Message, e.Details, request.CorrelationId)).ToList());
-                }
+                // Reconstruct GovernmentalInfoDetails
+                var govInfoDetails = GovernmentalInfoDetails.Create(request.GovIdNumber, request.PassportNumber);
+               
+                // Reconstruct GovernmentalInfo
+                var governmentalInfo = GovernmentalInfo.Create(Guid.NewGuid(), request.PersonId, request.CountryId, govInfoDetails);
+                
+                person!.AddGovernmentalInfo(governmentalInfo);
 
                 // Dispatch domain events
                 if (person.DomainEvents.Any())
@@ -131,6 +109,12 @@ namespace ConnectSphere.API.Application.MediatoRs.GovernmentalInfos.CommandHandl
                     "OPERATION_CANCELLED",
                     "The operation was cancelled.",
                     request.CorrelationId));
+            }
+            catch (DomainModelInvalidException ex)
+            {
+                _logger.LogWarning("Domain validation error occurred while handling CreateGovernmentalInfoCommand for PersonId: {PersonId}, CorrelationId: {CorrelationId}",
+                    request.PersonId, request.CorrelationId);
+                return _errorHandlingService.HandleDomainValidationException<GovernmentalInfoResponseDto>(ex, request.CorrelationId);
             }
             catch (Exception ex)
             {

@@ -28,6 +28,8 @@ namespace ConnectSphere.API.Domain.Common.Enums
         INVALIDARGUMENT = 1017,
         RESOURCEUPDATEFAILED = 1018,
         DatabaseError = 1019,
+        DomainValidationError = 1020,
+        ResourceUpdateFailed = 1021,
     }
 }
 
